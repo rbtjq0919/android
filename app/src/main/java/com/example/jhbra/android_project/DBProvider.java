@@ -18,7 +18,8 @@ public class DBProvider extends ContentProvider {
 
     public static final String SQL_CREATE_DEFAULT = "CREATE TABLE IF NOT EXISTS schedule "
             + "(_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "
-            + "title TEXT, time INTEGER, longitude REAL, latitude REAL, transport TEXT, "
+            + "title TEXT NOT NULL, time INTEGER, departure INTEGER, "
+            + "longitude REAL, latitude REAL, transport TEXT, alarm INTEGER NOT NULL DEFAULT 0, "
             + "memo TEXT);";
 
     static final UriMatcher matcher;
