@@ -19,6 +19,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Content provider -->
+        <provider
+            android:name=".DBProvider"
+            android:authorities="moapp1.gps.calendar"
+            android:enabled="true"
+            android:exported="true" />
     </application>
 
 </manifest>
