@@ -30,7 +30,7 @@
                     android:textSize="20dp" />
 
                 <EditText
-                    android:id="@+id/editTextTitleScheduleAdd"
+                    android:id="@+id/editTextTitle"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -50,7 +50,7 @@
                     android:textSize="20dp" />
 
                 <TextView
-                    android:id="@+id/textViewTargetDateScheduleAdd"
+                    android:id="@+id/textViewTargetDate"
                     android:layout_width="0dp"
                     android:layout_height="50dp"
                     android:layout_weight="1"
@@ -77,7 +77,7 @@
                     android:orientation="horizontal">
 
                     <TextView
-                        android:id="@+id/textViewTargetTimeAMPMScheduleAdd"
+                        android:id="@+id/textViewTargetTimeAMPM"
                         android:layout_width="wrap_content"
                         android:layout_height="match_parent"
                         android:layout_marginRight="7dp"
@@ -88,7 +88,7 @@
                         android:textSize="18dp" />
 
                     <TextView
-                        android:id="@+id/textViewTargetTimeClockScheduleAdd"
+                        android:id="@+id/textViewTargetTimeClock"
                         android:layout_width="wrap_content"
                         android:layout_height="match_parent"
                         android:gravity="center"
@@ -108,14 +108,14 @@
                     android:textSize="20dp" />
 
                 <TextView
-                    android:id="@+id/textViewDestinationAddressScheduleAdd"
+                    android:id="@+id/textViewDestinationAddress"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="10dp"
-                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="12dp"
+                    android:layout_marginTop="12dp"
                     android:layout_weight="1"
                     android:gravity="center"
-                    android:text="대구광역시 대현동 경북대학교 공대9호관"
+                    android:text="여기를 누르면 지도를 띄웁니다."
                     android:textColor="@color/colorAccent"
                     android:textSize="20dp" />
             </TableRow>
@@ -130,9 +130,11 @@
                     android:textSize="20dp" />
 
                 <TextView
-                    android:id="@+id/textViewTransportationScheduleAdd"
+                    android:id="@+id/textViewTransportation"
                     android:layout_width="0dp"
-                    android:layout_height="50dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:layout_marginTop="12dp"
                     android:layout_weight="1"
                     android:gravity="center"
                     android:text="자동차 (60km)"
@@ -150,7 +152,7 @@
                     android:textSize="20dp" />
 
                 <EditText
-                    android:id="@+id/editTextMemoScheduleAdd"
+                    android:id="@+id/editTextMemo"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"

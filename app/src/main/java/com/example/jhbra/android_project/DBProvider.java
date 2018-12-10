@@ -10,6 +10,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
 import android.text.TextUtils;
+import android.util.Log;
 
 public class DBProvider extends ContentProvider {
     static final Uri CONTENT_URI = Uri.parse("content://moapp1.gps.calendar/schedule");
@@ -18,7 +19,7 @@ public class DBProvider extends ContentProvider {
 
     public static final String SQL_CREATE_DEFAULT = "CREATE TABLE IF NOT EXISTS schedule "
             + "(_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "
-            + "title TEXT NOT NULL, time INTEGER, departure INTEGER, "
+            + "title TEXT NOT NULL, millis INTEGER NOT NULL, departure INTEGER, "
             + "longitude REAL, latitude REAL, transport TEXT, alarm INTEGER NOT NULL DEFAULT 0, "
             + "memo TEXT);";
 
@@ -104,7 +105,7 @@ public class DBProvider extends ContentProvider {
         String where = "";
 
         if (matcher.match(uri) == GET_ONE) {
-            where += "_id='" + uri.getPathSegments().get(1) + "'";
+            where += "_id=" + uri.getPathSegments().get(1);
         }
         if (TextUtils.isEmpty(selection) == false) {
             if (!where.isEmpty()) {
