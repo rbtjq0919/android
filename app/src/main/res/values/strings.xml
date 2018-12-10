@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Android_Project</string>
+    <string name="title_activity_schedule_edit">ScheduleEditAct</string>
 </resources>
