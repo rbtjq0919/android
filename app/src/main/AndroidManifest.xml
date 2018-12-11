@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.jhbra.android_project">
-    
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <application
         android:allowBackup="true"
@@ -26,6 +25,8 @@
             android:authorities="moapp1.gps.calendar"
             android:enabled="true"
             android:exported="true" />
+
+        <activity android:name=".CalendarView"></activity>
     </application>
 
 </manifest>
