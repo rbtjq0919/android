@@ -18,7 +18,7 @@ public class SplashAct extends AppCompatActivity {
     static final Integer APP_PERMISSION = 1;
 
     private void replaceWithLocationAct() {
-        Intent intent = new Intent(this, CalendarView.class);
+        Intent intent = new Intent(this, CalendarActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_TASK_ON_HOME);
         startActivity(intent);
         this.finish();

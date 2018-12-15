@@ -18,8 +18,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <activity android:name=".CalendarView"></activity>
+        <activity android:name=".CalendarView" />
 
         <!-- Content provider -->
         <provider
@@ -27,13 +26,14 @@
             android:authorities="moapp1.gps.calendar"
             android:enabled="true"
             android:exported="true" />
-      
+
         <!-- exported is true for debugging -->
         <activity
             android:name=".ScheduleEditAct"
+            android:exported="true"
             android:label="@string/title_activity_schedule_edit"
-            android:theme="@style/AppTheme"
-            android:exported="true"></activity>
+            android:theme="@style/AppTheme" />
+        <activity android:name=".CalendarActivity"></activity>
     </application>
 
 </manifest>
