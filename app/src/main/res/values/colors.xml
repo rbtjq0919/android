@@ -6,4 +6,8 @@
     <color name="toolbarLabel">#0048f0</color>
     <color name="textShadow">#7F000000</color>
     <color name="colorRipple">#9f008fff</color>
+    <color name="colorBlack">#000000</color>
+    <color name="colorWhite">#ffffff</color>
+    <color name="colorBlue">#21a4ff</color>
+
 </resources>
