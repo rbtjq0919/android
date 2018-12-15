@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Locale;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -79,11 +80,13 @@ public class CalendarActivity extends Activity {
     private AdapterView.OnItemClickListener mItemClickListener = new AdapterView.OnItemClickListener() {
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long l_position) {
-            //String tv = (String)parent.getAdapter().getItem(position);
-            //Toast.makeText(getApplicationContext(), tv, Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(getApplicationContext(),ScheduleEditAct.class);
 
-            System.out.println("123");
+            int day = position - mCal.get(Calendar.DAY_OF_WEEK) - 5;
+            System.out.println("DDDDDDDDDDDDDDD___ "+day +" "+ mCal.get(Calendar.DAY_OF_WEEK));
 
+            intent.putExtra("Day",day);
+            startActivity(intent);
 
         }
     };
@@ -119,8 +122,8 @@ public class CalendarActivity extends Activity {
             ViewHolder holder = null;
 
             if (convertView == null) {
-                convertView = inflater.inflate(R.layout.item_calendar_gridview, parent, false);
-                holder = new ViewHolder();
+                    convertView = inflater.inflate(R.layout.item_calendar_gridview, parent, false);
+                    holder = new ViewHolder();
 
                 holder.tvItemGridView = (TextView)convertView.findViewById(R.id.tv_item_gridview);
 
