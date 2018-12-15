@@ -1,5 +1,6 @@
 package com.example.jhbra.android_project;
 
+import android.app.DatePickerDialog;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
@@ -8,6 +9,7 @@ import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.CancellationSignal;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
@@ -15,11 +17,15 @@ import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.TimePicker;
 import android.widget.Toast;
 
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 
 public class ScheduleEditAct extends AppCompatActivity {
 
@@ -91,8 +97,7 @@ public class ScheduleEditAct extends AppCompatActivity {
         EditText editTextTitle = (EditText) findViewById(R.id.editTextTitle);
         EditText editTextMemo = (EditText) findViewById(R.id.editTextMemo);
         TextView textViewTargetDate = (TextView) findViewById(R.id.textViewTargetDate);
-        TextView textViewTargetTimeAMPM = (TextView) findViewById(R.id.textViewTargetTimeAMPM);
-        TextView textViewTargetTimeClock = (TextView) findViewById(R.id.textViewTargetTimeClock);
+        TimePicker timePicker = (TimePicker) findViewById(R.id.timePickerTargetTime);
 
         if (mScheduleID != null) {
             // Set toolbar label
@@ -126,11 +131,11 @@ public class ScheduleEditAct extends AppCompatActivity {
 
         // Set date/time views
         String dateStr = DateFormat.format("yyyy-MM-dd", mTargetDate).toString();
-        String ampmStr = DateFormat.format("aa", mTargetDate).toString();
-        String timeStr = DateFormat.format("hh:mm", mTargetDate).toString();
         textViewTargetDate.setText(dateStr);
-        textViewTargetTimeAMPM.setText(ampmStr);
-        textViewTargetTimeClock.setText(timeStr);
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(mTargetDate);
+        timePicker.setHour(calendar.get(Calendar.HOUR_OF_DAY));
+        timePicker.setMinute(calendar.get(Calendar.MINUTE));
 
         return true;
     }
@@ -198,9 +203,6 @@ public class ScheduleEditAct extends AppCompatActivity {
             Log.i("ScheduleEditAct", "No intent bundle!");
         }
 
-        // TEST TEST TEST TEST for loading
-        // mScheduleID = 1L;
-
         // Log values
         if (mScheduleID != null) {
             Log.d("ScheduleEditAct", "onCreate: mScheduleID is "
@@ -215,11 +217,60 @@ public class ScheduleEditAct extends AppCompatActivity {
             mScheduleID = null;
             initValuesAndViews();
         }
+
+        // Register TimePicker
+        TimePicker timePicker = (TimePicker) findViewById(R.id.timePickerTargetTime);
+        timePicker.setOnTimeChangedListener(new TimePicker.OnTimeChangedListener() {
+            @Override
+            public void onTimeChanged(TimePicker view, int hourOfDay, int minute) {
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTime(mTargetDate);
+                mTargetDate = new GregorianCalendar(
+                        calendar.get(Calendar.YEAR),
+                        calendar.get(Calendar.MONTH),
+                        calendar.get(Calendar.DAY_OF_MONTH),
+                        hourOfDay,
+                        minute).getTime();
+                Log.d("ScheduleEditAct", "onTimeChanged: mTargetDate is "
+                        + mTargetDate.toString());
+            }
+        });
     }
 
     @Override
     public void onResume() {
         super.onResume();
+    }
+
+    public void onClickTargetDate(View v) {
+        hideSoftKeyboard();
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(mTargetDate);
+
+        final TextView textViewTargetDate = (TextView) findViewById(R.id.textViewTargetDate);
+
+        DatePickerDialog datePickerDialog = new DatePickerDialog(
+                ScheduleEditAct.this,
+                new DatePickerDialog.OnDateSetListener() {
+                    @Override
+                    public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
+                        Calendar calendar = Calendar.getInstance();
+                        calendar.setTime(mTargetDate);
+                        mTargetDate = new GregorianCalendar(year, month, dayOfMonth,
+                                calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE))
+                                .getTime();
+                        textViewTargetDate.setText(String.format("%04d-%02d-%02d", year, month,
+                                dayOfMonth));
+                        Log.d("ScheduleEditAct", "onDateSet: mTargetDate is "
+                                + mTargetDate.toString());
+                    }
+                },
+                calendar.get(Calendar.YEAR),
+                calendar.get(Calendar.MONTH),
+                calendar.get(Calendar.DAY_OF_MONTH)
+        );
+        datePickerDialog.show();
     }
 
     public void onClickCancelOnToolbar(View v) {
