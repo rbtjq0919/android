@@ -19,13 +19,15 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".CalendarView"></activity>
+
         <!-- Content provider -->
         <provider
             android:name=".DBProvider"
             android:authorities="moapp1.gps.calendar"
             android:enabled="true"
             android:exported="true" />
-
+      
         <!-- exported is true for debugging -->
         <activity
             android:name=".ScheduleEditAct"
