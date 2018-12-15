@@ -55,9 +55,10 @@
                     android:layout_height="50dp"
                     android:layout_weight="1"
                     android:gravity="center"
+                    android:onClick="onClickTargetDate"
                     android:text="YYYY-MM-DD"
                     android:textColor="@color/colorAccent"
-                    android:textSize="22dp" />
+                    android:textSize="24dp" />
             </TableRow>
 
             <TableRow android:gravity="center_vertical">
@@ -69,33 +70,14 @@
                     android:text="시간"
                     android:textSize="20dp" />
 
-                <LinearLayout
+                <TimePicker
+                    android:id="@+id/timePickerTargetTime"
                     android:layout_width="0dp"
-                    android:layout_height="50dp"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:gravity="center_horizontal"
-                    android:orientation="horizontal">
+                    android:timePickerMode="spinner">
 
-                    <TextView
-                        android:id="@+id/textViewTargetTimeAMPM"
-                        android:layout_width="wrap_content"
-                        android:layout_height="match_parent"
-                        android:layout_marginRight="7dp"
-                        android:gravity="center"
-                        android:paddingTop="10dp"
-                        android:text="오전"
-                        android:textColor="@color/colorAccent"
-                        android:textSize="18dp" />
-
-                    <TextView
-                        android:id="@+id/textViewTargetTimeClock"
-                        android:layout_width="wrap_content"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:text="12:00"
-                        android:textColor="@color/colorAccent"
-                        android:textSize="28dp" />
-                </LinearLayout>
+                </TimePicker>
             </TableRow>
 
             <TableRow android:gravity="center_vertical">
@@ -137,7 +119,8 @@
                     android:layout_marginTop="12dp"
                     android:layout_weight="1"
                     android:gravity="center"
-                    android:text="자동차 (60km)"
+                    android:onClick="onClickTransportation"
+                    android:text="알 수 없는 이동수단"
                     android:textColor="@color/colorAccent"
                     android:textSize="22dp" />
             </TableRow>

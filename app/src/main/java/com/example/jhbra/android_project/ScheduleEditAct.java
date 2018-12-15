@@ -1,25 +1,32 @@
 package com.example.jhbra.android_project;
 
+import android.app.DatePickerDialog;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.TimePicker;
 import android.widget.Toast;
 
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 
 public class ScheduleEditAct extends AppCompatActivity {
 
@@ -35,7 +42,7 @@ public class ScheduleEditAct extends AppCompatActivity {
     @Nullable
     private Double mLatitude;
     @NonNull
-    private String mTransport = "car";
+    private Transportation mTransport = Transportation.CAR;
 
     public ScheduleEditAct() {
         long millis = (System.currentTimeMillis() + 25 * 60 * 60 * 1000);
@@ -91,8 +98,8 @@ public class ScheduleEditAct extends AppCompatActivity {
         EditText editTextTitle = (EditText) findViewById(R.id.editTextTitle);
         EditText editTextMemo = (EditText) findViewById(R.id.editTextMemo);
         TextView textViewTargetDate = (TextView) findViewById(R.id.textViewTargetDate);
-        TextView textViewTargetTimeAMPM = (TextView) findViewById(R.id.textViewTargetTimeAMPM);
-        TextView textViewTargetTimeClock = (TextView) findViewById(R.id.textViewTargetTimeClock);
+        TimePicker timePicker = (TimePicker) findViewById(R.id.timePickerTargetTime);
+        TextView textViewTransport = (TextView) findViewById(R.id.textViewTransportation);
 
         if (mScheduleID != null) {
             // Set toolbar label
@@ -119,6 +126,24 @@ public class ScheduleEditAct extends AppCompatActivity {
 
             String memo = cv.getAsString("memo");
             editTextMemo.setText(memo);
+
+            // Set transportation
+            String tranportDBText = cv.getAsString("transport");
+
+            Transportation transportSelected = null;
+            for (Transportation t : Transportation.values()) {
+                if (t.getDBText() == tranportDBText) {
+                    transportSelected = t;
+                    break;
+                }
+            }
+            if (transportSelected != null) {
+                mTransport = transportSelected;
+            } else {
+                Log.e("ScheduleEditAct", "initValuesAndViews: "
+                        + "Cannot comprehend DB column \"transport\": " + tranportDBText);
+                return false;
+            }
         } else {
             // Set toolbar label
             textViewToolbar.setText("일정 추가");
@@ -126,11 +151,15 @@ public class ScheduleEditAct extends AppCompatActivity {
 
         // Set date/time views
         String dateStr = DateFormat.format("yyyy-MM-dd", mTargetDate).toString();
-        String ampmStr = DateFormat.format("aa", mTargetDate).toString();
-        String timeStr = DateFormat.format("hh:mm", mTargetDate).toString();
         textViewTargetDate.setText(dateStr);
-        textViewTargetTimeAMPM.setText(ampmStr);
-        textViewTargetTimeClock.setText(timeStr);
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(mTargetDate);
+        timePicker.setHour(calendar.get(Calendar.HOUR_OF_DAY));
+        timePicker.setMinute(calendar.get(Calendar.MINUTE));
+
+        // Set transportation view
+        String[] transports = getResources().getStringArray(R.array.transportation);
+        textViewTransport.setText(transports[mTransport.getNum()]);
 
         return true;
     }
@@ -166,7 +195,7 @@ public class ScheduleEditAct extends AppCompatActivity {
             cv.putNull("latitude");
         }
 
-        cv.put("transport", mTransport);
+        cv.put("transport", mTransport.getDBText());
 
         String memo = editTextMemo.getText().toString().trim();
         cv.put("memo", memo);
@@ -198,9 +227,6 @@ public class ScheduleEditAct extends AppCompatActivity {
             Log.i("ScheduleEditAct", "No intent bundle!");
         }
 
-        // TEST TEST TEST TEST for loading
-        // mScheduleID = 1L;
-
         // Log values
         if (mScheduleID != null) {
             Log.d("ScheduleEditAct", "onCreate: mScheduleID is "
@@ -215,11 +241,110 @@ public class ScheduleEditAct extends AppCompatActivity {
             mScheduleID = null;
             initValuesAndViews();
         }
+
+        // Register TimePicker
+        TimePicker timePicker = (TimePicker) findViewById(R.id.timePickerTargetTime);
+        timePicker.setOnTimeChangedListener(new TimePicker.OnTimeChangedListener() {
+            @Override
+            public void onTimeChanged(TimePicker view, int hourOfDay, int minute) {
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTime(mTargetDate);
+                mTargetDate = new GregorianCalendar(
+                        calendar.get(Calendar.YEAR),
+                        calendar.get(Calendar.MONTH),
+                        calendar.get(Calendar.DAY_OF_MONTH),
+                        hourOfDay,
+                        minute).getTime();
+                Log.d("ScheduleEditAct", "onTimeChanged: mTargetDate is "
+                        + mTargetDate.toString());
+            }
+        });
     }
 
     @Override
     public void onResume() {
         super.onResume();
+    }
+
+    public void onClickTargetDate(View v) {
+        hideSoftKeyboard();
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(mTargetDate);
+
+        final TextView textViewTargetDate = (TextView) findViewById(R.id.textViewTargetDate);
+
+        DatePickerDialog datePickerDialog = new DatePickerDialog(
+                ScheduleEditAct.this,
+                new DatePickerDialog.OnDateSetListener() {
+                    @Override
+                    public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
+                        Calendar calendar = Calendar.getInstance();
+                        calendar.setTime(mTargetDate);
+                        mTargetDate = new GregorianCalendar(year, month, dayOfMonth,
+                                calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE))
+                                .getTime();
+                        textViewTargetDate.setText(String.format("%04d-%02d-%02d", year, month,
+                                dayOfMonth));
+                        Log.d("ScheduleEditAct", "onDateSet: mTargetDate is "
+                                + mTargetDate.toString());
+                    }
+                },
+                calendar.get(Calendar.YEAR),
+                calendar.get(Calendar.MONTH),
+                calendar.get(Calendar.DAY_OF_MONTH)
+        );
+        datePickerDialog.show();
+    }
+
+    public void onClickTransportation(View v) {
+        hideSoftKeyboard();
+
+        TextView textViewTransport = (TextView) findViewById(R.id.textViewTransportation);
+        new AlertDialog.Builder(this)
+                .setTitle("대세는 누구?")
+                .setItems(R.array.transportation,
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                String[] transports
+                                        = getResources().getStringArray(R.array.transportation);
+                                Transportation transportSelected = null;
+                                for (Transportation t : Transportation.values()) {
+                                    if (t.getNum() == which) {
+                                        transportSelected = t;
+                                        break;
+                                    }
+                                }
+                                if (transportSelected != null) {
+                                    mTransport = transportSelected;
+                                    TextView textViewTransport
+                                            = (TextView) findViewById(R.id.textViewTransportation);
+                                    textViewTransport.setText(transports[which]);
+                                    Log.d("ScheduleEditAct", "onClick (transportation): "
+                                            + "Selected " + transportSelected.getDBText()
+                                            + " (" + transports[which] + ")");
+                                } else {
+                                    Log.w("ScheduleEditAct", "onClick (transportation): "
+                                            + "Cannot comprehend selection " + which
+                                            + " (" + transports[which] + ")");
+                                }
+                            }
+                        }
+                )
+                .setNegativeButton("없어!", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int button) {
+                        switch (button) {
+                            case DialogInterface.BUTTON_NEGATIVE:
+                                Toast.makeText(ScheduleEditAct.this,
+                                        "이동수단 선택을 취소했습니다.", Toast.LENGTH_SHORT).show();
+                                break;
+                        }
+                    }
+                })
+                .setCancelable(false)
+                .show();
     }
 
     public void onClickCancelOnToolbar(View v) {
