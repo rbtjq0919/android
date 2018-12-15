@@ -5,13 +5,14 @@ import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.CancellationSignal;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.format.DateFormat;
 import android.util.Log;
@@ -41,7 +42,7 @@ public class ScheduleEditAct extends AppCompatActivity {
     @Nullable
     private Double mLatitude;
     @NonNull
-    private String mTransport = "car";
+    private Transportation mTransport = Transportation.CAR;
 
     public ScheduleEditAct() {
         long millis = (System.currentTimeMillis() + 25 * 60 * 60 * 1000);
@@ -98,6 +99,7 @@ public class ScheduleEditAct extends AppCompatActivity {
         EditText editTextMemo = (EditText) findViewById(R.id.editTextMemo);
         TextView textViewTargetDate = (TextView) findViewById(R.id.textViewTargetDate);
         TimePicker timePicker = (TimePicker) findViewById(R.id.timePickerTargetTime);
+        TextView textViewTransport = (TextView) findViewById(R.id.textViewTransportation);
 
         if (mScheduleID != null) {
             // Set toolbar label
@@ -124,6 +126,24 @@ public class ScheduleEditAct extends AppCompatActivity {
 
             String memo = cv.getAsString("memo");
             editTextMemo.setText(memo);
+
+            // Set transportation
+            String tranportDBText = cv.getAsString("transport");
+
+            Transportation transportSelected = null;
+            for (Transportation t : Transportation.values()) {
+                if (t.getDBText() == tranportDBText) {
+                    transportSelected = t;
+                    break;
+                }
+            }
+            if (transportSelected != null) {
+                mTransport = transportSelected;
+            } else {
+                Log.e("ScheduleEditAct", "initValuesAndViews: "
+                        + "Cannot comprehend DB column \"transport\": " + tranportDBText);
+                return false;
+            }
         } else {
             // Set toolbar label
             textViewToolbar.setText("일정 추가");
@@ -136,6 +156,10 @@ public class ScheduleEditAct extends AppCompatActivity {
         calendar.setTime(mTargetDate);
         timePicker.setHour(calendar.get(Calendar.HOUR_OF_DAY));
         timePicker.setMinute(calendar.get(Calendar.MINUTE));
+
+        // Set transportation view
+        String[] transports = getResources().getStringArray(R.array.transportation);
+        textViewTransport.setText(transports[mTransport.getNum()]);
 
         return true;
     }
@@ -171,7 +195,7 @@ public class ScheduleEditAct extends AppCompatActivity {
             cv.putNull("latitude");
         }
 
-        cv.put("transport", mTransport);
+        cv.put("transport", mTransport.getDBText());
 
         String memo = editTextMemo.getText().toString().trim();
         cv.put("memo", memo);
@@ -271,6 +295,54 @@ public class ScheduleEditAct extends AppCompatActivity {
                 calendar.get(Calendar.DAY_OF_MONTH)
         );
         datePickerDialog.show();
+    }
+
+    public void onClickTransportation(View v) {
+        TextView textViewTransport = (TextView) findViewById(R.id.textViewTransportation);
+        new AlertDialog.Builder(this)
+                .setTitle("대세는 누구?")
+                .setItems(R.array.transportation,
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                String[] transports
+                                        = getResources().getStringArray(R.array.transportation);
+                                Transportation transportSelected = null;
+                                for (Transportation t : Transportation.values()) {
+                                    if (t.getNum() == which) {
+                                        transportSelected = t;
+                                        break;
+                                    }
+                                }
+                                if (transportSelected != null) {
+                                    mTransport = transportSelected;
+                                    TextView textViewTransport
+                                            = (TextView) findViewById(R.id.textViewTransportation);
+                                    textViewTransport.setText(transports[which]);
+                                    Log.d("ScheduleEditAct", "onClick (transportation): "
+                                            + "Selected " + transportSelected.getDBText()
+                                            + " (" + transports[which] + ")");
+                                } else {
+                                    Log.w("ScheduleEditAct", "onClick (transportation): "
+                                            + "Cannot comprehend selection " + which
+                                            + " (" + transports[which] + ")");
+                                }
+                            }
+                        }
+                )
+                .setNegativeButton("없어!", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int button) {
+                        switch (button) {
+                            case DialogInterface.BUTTON_NEGATIVE:
+                                Toast.makeText(ScheduleEditAct.this,
+                                        "이동수단 선택을 취소했습니다.", Toast.LENGTH_SHORT).show();
+                                break;
+                        }
+                    }
+                })
+                .setCancelable(false)
+                .show();
     }
 
     public void onClickCancelOnToolbar(View v) {
