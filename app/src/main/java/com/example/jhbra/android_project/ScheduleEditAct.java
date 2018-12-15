@@ -298,6 +298,8 @@ public class ScheduleEditAct extends AppCompatActivity {
     }
 
     public void onClickTransportation(View v) {
+        hideSoftKeyboard();
+
         TextView textViewTransport = (TextView) findViewById(R.id.textViewTransportation);
         new AlertDialog.Builder(this)
                 .setTitle("대세는 누구?")
