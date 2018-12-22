@@ -10,7 +10,7 @@
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="모든 알람 목록"
+        android:text="오늘 알람 목록"
         android:textSize="25dp"
         android:textColor="@color/colorWhite"
         android:background="@color/colorBlue"
@@ -30,7 +30,7 @@
         android:id="@android:id/list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-    >
+        >
     </ListView>
 
     <TextView
