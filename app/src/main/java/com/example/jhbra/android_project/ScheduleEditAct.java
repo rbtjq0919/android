@@ -162,6 +162,30 @@ public class ScheduleEditAct extends AppCompatActivity {
         }
     }
 
+    private String geocodeLocation(double latitude, double longitude) {
+        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+        String addressStr = null;
+        try {
+            List<Address> addressList
+                    = geocoder.getFromLocation(latitude, longitude, 1);
+            Address address = addressList.get(0);
+            StringBuilder sb = new StringBuilder();
+            sb.append(address.getCountryName());
+            sb.append(' ');
+            sb.append(address.getAdminArea());
+            sb.append(' ');
+            sb.append(address.getSubAdminArea());
+            sb.append(' ');
+            sb.append(address.getLocality());
+            addressStr = sb.toString();
+        } catch (IOException e) {
+            Log.e("ScheduleEditAct", "geocodeLocation: cannot convert longitude " +
+                    "and latitude to a geo-coded address!", e);
+            addressStr = getFormattedLocationInDegree(latitude, longitude);
+        }
+        return addressStr;
+    }
+
     private boolean initValuesAndViews() {
         TextView textViewToolbar = (TextView) findViewById(R.id.textViewToolbar);
         EditText editTextTitle = (EditText) findViewById(R.id.editTextTitle);
@@ -262,27 +286,7 @@ public class ScheduleEditAct extends AppCompatActivity {
 
         // Set destination address view
         if (mLongitude != null && mLatitude != null) {
-            Geocoder geocoder = new Geocoder(this, Locale.getDefault());
-            String addressStr = null;
-            try {
-                List<Address> addressList
-                        = geocoder.getFromLocation(mLatitude, mLongitude, 1);
-                Address address = addressList.get(0);
-                StringBuilder sb = new StringBuilder();
-                sb.append(address.getCountryName());
-                sb.append(' ');
-                sb.append(address.getAdminArea());
-                sb.append(' ');
-                sb.append(address.getSubAdminArea());
-                sb.append(' ');
-                sb.append(address.getLocality());
-                addressStr = sb.toString();
-            } catch (IOException e) {
-                Log.e("ScheduleEditAct", "initValuesAndViews: cannot convert longitude " +
-                        "and latitude to a geo-coded address!", e);
-                addressStr = getFormattedLocationInDegree(mLatitude, mLongitude);
-            }
-            textViewDestinationAddress.setText(addressStr);
+            textViewDestinationAddress.setText(geocodeLocation(mLatitude, mLongitude));
         }
 
         // Set transportation view
@@ -521,6 +525,11 @@ public class ScheduleEditAct extends AppCompatActivity {
                         + "longitude = " + location.getLongitude() + ", latitude = "
                         + location.getLatitude());
                 mCurLocation = location;
+                // Update view
+                TextView textViewCurLocation
+                        = (TextView) findViewById(R.id.textViewCurrentLocation);
+                textViewCurLocation.setText(
+                        geocodeLocation(location.getLatitude(), location.getLongitude()));
             }
 
             @Override
