@@ -6,6 +6,7 @@ import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.net.Uri;
@@ -28,6 +29,10 @@ import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.ui.PlacePicker;
+import com.google.android.gms.maps.model.LatLng;
+
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -36,6 +41,7 @@ public class ScheduleEditAct extends AppCompatActivity {
 
     public static final String ARG_SCHEDULE_ID = "SCHEDULE_ID";
     public static final String ARG_TARGET_TIMESTAMP = "TARGET_TIMESTAMP";
+    public static final int REQUEST_PLACE_PICKER = 5;
 
     @Nullable
     private Long mScheduleID;
@@ -318,8 +324,8 @@ public class ScheduleEditAct extends AppCompatActivity {
             Log.i("ScheduleEditAct", "No intent bundle!");
         }
 
-        // TODO: disable test ID
-        mScheduleID = 1L;
+        // Testing update mode (forced)
+        //mScheduleID = 1L;
 
         // Log values
         if (mScheduleID != null) {
@@ -429,6 +435,36 @@ public class ScheduleEditAct extends AppCompatActivity {
         super.onResume();
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_PLACE_PICKER) {
+            Log.d("ScheduleEditAct", "onActivityResult: requestCode = " +
+                    "REQUEST_PLACE_PICKER, resultCode = " + resultCode);
+            if (resultCode == RESULT_OK) {
+                // Get place
+                Place place = PlacePicker.getPlace(this, data);
+                // Set TextView
+                TextView textViewDestinationAddress
+                        = (TextView) findViewById(R.id.textViewDestinationAddress);
+                textViewDestinationAddress.setText(place.getName());
+                // Set longitude and latitude
+                LatLng latLng = place.getLatLng();
+                mLongitude = latLng.longitude;
+                mLatitude = latLng.latitude;
+                Log.d("ScheduleEditAct", "onActivityResult: place selected => " +
+                        "longitude = " + mLongitude + ", latitude = " + mLatitude);
+                Toast.makeText(this, "장소를 선택했습니다.",
+                        Toast.LENGTH_SHORT).show();
+            } else if (resultCode == RESULT_CANCELED) {
+                Toast.makeText(this, "장소 선택을 취소했습니다.",
+                        Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            Log.d("ScheduleEditAct", "onActivityResult: requestCode = " +
+                    "unknown (" + requestCode +  "), resultCode = " + resultCode);
+        }
+    }
+
     public void onClickTargetDate(View v) {
         hideSoftKeyboard();
 
@@ -459,6 +495,16 @@ public class ScheduleEditAct extends AppCompatActivity {
                 calendar.get(Calendar.DAY_OF_MONTH)
         );
         datePickerDialog.show();
+    }
+
+    public void onClickTextViewDestinationAddress(View v) {
+        PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
+        try {
+            startActivityForResult(builder.build(this), REQUEST_PLACE_PICKER);
+        } catch (Exception e) {
+            Log.e("ScheduleEditAct", "onClickTextViewDestinationAddress: failed to " +
+                    "startActivityForResult()", e);
+        }
     }
 
     public void onClickTransportation(View v) {
