@@ -18,8 +18,10 @@ import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.CompoundButton;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
@@ -41,6 +43,8 @@ public class ScheduleEditAct extends AppCompatActivity {
     private Double mLongitude;
     @Nullable
     private Double mLatitude;
+    @Nullable
+    private Date mDepartureDate;
     @NonNull
     private Transportation mTransport = Transportation.CAR;
 
@@ -93,6 +97,18 @@ public class ScheduleEditAct extends AppCompatActivity {
         return null;
     }
 
+    private void postToggleAlarm(boolean isChecked) {
+        TextView textViewDepartureTime
+                = (TextView) findViewById(R.id.textViewDepartureTime);
+        if (isChecked) {
+            textViewDepartureTime.setTextColor(
+                    getResources().getColor(R.color.colorBlack, null));
+        } else {
+            textViewDepartureTime.setTextColor(
+                    getResources().getColor(R.color.colorGray, null));
+        }
+    }
+
     private boolean initValuesAndViews() {
         TextView textViewToolbar = (TextView) findViewById(R.id.textViewToolbar);
         EditText editTextTitle = (EditText) findViewById(R.id.editTextTitle);
@@ -124,15 +140,11 @@ public class ScheduleEditAct extends AppCompatActivity {
             } catch (NullPointerException e) {
             }
 
-            String memo = cv.getAsString("memo");
-            editTextMemo.setText(memo);
-
             // Set transportation
             String tranportDBText = cv.getAsString("transport");
-
             Transportation transportSelected = null;
             for (Transportation t : Transportation.values()) {
-                if (t.getDBText() == tranportDBText) {
+                if (t.getDBText().equals(tranportDBText)) {
                     transportSelected = t;
                     break;
                 }
@@ -144,6 +156,32 @@ public class ScheduleEditAct extends AppCompatActivity {
                         + "Cannot comprehend DB column \"transport\": " + tranportDBText);
                 return false;
             }
+
+            // Set departure time
+            Long departureTime = cv.getAsLong("departure");
+            String departureTimeStr = null;
+            if (departureTime != null) {
+                mDepartureDate = new Date(departureTime);
+                departureTimeStr = DateFormat.format("yyyy-MM-dd HH:mm aa", mDepartureDate)
+                        .toString();
+            } else {
+                departureTimeStr = "미정";
+            }
+            TextView textViewDepartureTime = (TextView) findViewById(R.id.textViewDepartureTime);
+            textViewDepartureTime.setText(departureTimeStr);
+
+            Integer alarmEnabledInteger = cv.getAsInteger("alarm");
+            Switch switchToggleAlarm = (Switch) findViewById(R.id.switchToggleAlarm);
+            if (alarmEnabledInteger.intValue() == 1) {
+                switchToggleAlarm.setChecked(true);
+                postToggleAlarm(true);
+            } else {
+                switchToggleAlarm.setChecked(false);
+                postToggleAlarm(false);
+            }
+
+            String memo = cv.getAsString("memo");
+            editTextMemo.setText(memo);
         } else {
             // Set toolbar label
             textViewToolbar.setText("일정 추가");
@@ -184,8 +222,11 @@ public class ScheduleEditAct extends AppCompatActivity {
         long millis = mTargetDate.getTime();
         cv.put("millis", millis);
 
-        // TEST TODO test data
-        cv.put("departure", millis - 10);
+        if (mDepartureDate != null) {
+            cv.put("departure", mDepartureDate.getTime());
+        } else {
+            cv.putNull("departure");
+        }
 
         if (mLongitude != null && mLatitude != null) {
             cv.put("longitude", mLongitude);
@@ -196,6 +237,9 @@ public class ScheduleEditAct extends AppCompatActivity {
         }
 
         cv.put("transport", mTransport.getDBText());
+
+        Switch switchToggleAlarm = (Switch) findViewById(R.id.switchToggleAlarm);
+        cv.put("alarm", switchToggleAlarm.isChecked() ? 1 : 0);
 
         String memo = editTextMemo.getText().toString().trim();
         cv.put("memo", memo);
@@ -227,6 +271,9 @@ public class ScheduleEditAct extends AppCompatActivity {
             Log.i("ScheduleEditAct", "No intent bundle!");
         }
 
+        // TODO: disable test ID
+        mScheduleID = 1L;
+
         // Log values
         if (mScheduleID != null) {
             Log.d("ScheduleEditAct", "onCreate: mScheduleID is "
@@ -257,6 +304,24 @@ public class ScheduleEditAct extends AppCompatActivity {
                         minute).getTime();
                 Log.d("ScheduleEditAct", "onTimeChanged: mTargetDate is "
                         + mTargetDate.toString());
+            }
+        });
+
+        // Register Switch to toggle alarm
+        Switch switchToggleAlarm = (Switch) findViewById(R.id.switchToggleAlarm);
+        switchToggleAlarm.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                hideSoftKeyboard();
+                postToggleAlarm(isChecked);
+            }
+        });
+        TextView textViewDepartureTime = (TextView) findViewById(R.id.textViewDepartureTime);
+        textViewDepartureTime.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Switch switchToggleAlarm = (Switch) findViewById(R.id.switchToggleAlarm);
+                switchToggleAlarm.toggle();
             }
         });
     }
@@ -300,9 +365,8 @@ public class ScheduleEditAct extends AppCompatActivity {
     public void onClickTransportation(View v) {
         hideSoftKeyboard();
 
-        TextView textViewTransport = (TextView) findViewById(R.id.textViewTransportation);
         new AlertDialog.Builder(this)
-                .setTitle("대세는 누구?")
+                .setTitle("이동수단을 선택하세요")
                 .setItems(R.array.transportation,
                         new DialogInterface.OnClickListener() {
                             @Override
@@ -332,7 +396,7 @@ public class ScheduleEditAct extends AppCompatActivity {
                             }
                         }
                 )
-                .setNegativeButton("없어!", new DialogInterface.OnClickListener() {
+                .setNegativeButton("취소", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int button) {
                         switch (button) {
