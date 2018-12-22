@@ -14,6 +14,8 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.View;
@@ -162,8 +164,18 @@ public class ScheduleEditAct extends AppCompatActivity {
             String departureTimeStr = null;
             if (departureTime != null) {
                 mDepartureDate = new Date(departureTime);
-                departureTimeStr = DateFormat.format("yyyy-MM-dd HH:mm aa", mDepartureDate)
+                departureTimeStr = DateFormat.format("yyyy-MM-dd hh:mm aa", mDepartureDate)
                         .toString();
+                // Set move duration
+                long moveDuration = millis - departureTime;
+                if (moveDuration >= 0) {
+                    if (moveDuration > 525600) {
+                        moveDuration = 525600;
+                    }
+                    EditText editTextMoveDuration
+                            = (EditText) findViewById(R.id.editTextMoveDuration);
+                    editTextMoveDuration.setText(String.valueOf(moveDuration));
+                }
             } else {
                 departureTimeStr = "미정";
             }
@@ -247,6 +259,41 @@ public class ScheduleEditAct extends AppCompatActivity {
         return cv;
     }
 
+    private void updateDepartureTimeAndView() {
+        TextView textViewDepartureTime
+                = (TextView) findViewById(R.id.textViewDepartureTime);
+        EditText editTextMoveDuration = (EditText) findViewById(R.id.editTextMoveDuration);
+
+        String moveDurationStr = editTextMoveDuration.getText().toString().trim();
+        if ("".equals(moveDurationStr)) {
+            return;
+        }
+
+        String departureTimeStr;
+        int moveDuration = 0;
+        try {
+            // Convert to a minute integer
+            moveDuration = Integer.parseInt(moveDurationStr);
+        } catch (NumberFormatException e) {
+            Log.e("ScheduleEditAct", "updateDepartureTimeAndView: cannot convert \""
+                    + moveDurationStr + "\" to an integer!");
+            return;
+        }
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(mTargetDate);
+        calendar.add(Calendar.MINUTE, -1 * moveDuration);
+        mDepartureDate = calendar.getTime();
+
+        Log.d("ScheduleEditAct", "updateDepartureTimeAndView: mDepartureDate is "
+                + mDepartureDate.toString());
+
+        departureTimeStr
+                = DateFormat.format("yyyy-MM-dd hh:mm aa", mDepartureDate)
+                .toString();
+        textViewDepartureTime.setText(departureTimeStr);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -304,6 +351,7 @@ public class ScheduleEditAct extends AppCompatActivity {
                         minute).getTime();
                 Log.d("ScheduleEditAct", "onTimeChanged: mTargetDate is "
                         + mTargetDate.toString());
+                updateDepartureTimeAndView();
             }
         });
 
@@ -324,6 +372,56 @@ public class ScheduleEditAct extends AppCompatActivity {
                 switchToggleAlarm.toggle();
             }
         });
+
+        // Set TextWatcher for editTextMoveDuration
+        EditText editTextMoveDuration = (EditText) findViewById(R.id.editTextMoveDuration);
+        TextWatcher moveDurationTextWatcher = new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                TextView textViewDepartureTime
+                        = (TextView) findViewById(R.id.textViewDepartureTime);
+                String ss = s.toString().trim();
+                String departureTimeStr = "미정";
+
+                if (!"".equals(ss)) {
+                    int moveDuration = 0;
+                    try {
+                        // Convert to a minute integer
+                        moveDuration = Integer.parseInt(ss);
+                        // Check range
+                        if (moveDuration > 525600) {
+                            throw new NumberFormatException();
+                        }
+                    } catch (NumberFormatException e) {
+                        moveDuration = 525600;
+                        EditText editTextMoveDuration
+                                = (EditText) findViewById(R.id.editTextMoveDuration);
+                        String moveDurationStr = String.valueOf(moveDuration);
+                        editTextMoveDuration.setText(moveDurationStr);
+                        editTextMoveDuration.setSelection(moveDurationStr.length());
+                    }
+                    Calendar calendar = Calendar.getInstance();
+                    calendar.setTime(mTargetDate);
+                    calendar.add(Calendar.MINUTE, -1 * moveDuration);
+                    mDepartureDate = calendar.getTime();
+                    Log.d("ScheduleEditAct", "afterTextChanged: mDepartureDate is "
+                            + mDepartureDate.toString());
+                    departureTimeStr
+                            = DateFormat.format("yyyy-MM-dd hh:mm aa", mDepartureDate)
+                            .toString();
+                }
+                textViewDepartureTime.setText(departureTimeStr);
+            }
+        };
+        editTextMoveDuration.addTextChangedListener(moveDurationTextWatcher);
     }
 
     @Override
@@ -353,6 +451,7 @@ public class ScheduleEditAct extends AppCompatActivity {
                                 dayOfMonth));
                         Log.d("ScheduleEditAct", "onDateSet: mTargetDate is "
                                 + mTargetDate.toString());
+                        updateDepartureTimeAndView();
                     }
                 },
                 calendar.get(Calendar.YEAR),
