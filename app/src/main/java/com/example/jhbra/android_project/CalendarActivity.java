@@ -6,9 +6,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import android.app.Activity;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -16,12 +20,14 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
+import android.widget.ListAdapter;
 import android.widget.ListView;
+import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
 public class CalendarActivity extends Activity {
-    
+
     private TextView tvDate;
     private GridAdapter gridAdapter;
     private ArrayList<String> dayList;
@@ -40,7 +46,10 @@ public class CalendarActivity extends Activity {
         final SimpleDateFormat curYearFormat = new SimpleDateFormat("yyyy", Locale.KOREA);
         final SimpleDateFormat curMonthFormat = new SimpleDateFormat("MM", Locale.KOREA);
         final SimpleDateFormat curDayFormat = new SimpleDateFormat("dd", Locale.KOREA);
-        
+
+
+
+
         tvDate.setText(curYearFormat.format(date) + "/" + curMonthFormat.format(date));
         
         dayList = new ArrayList<String>();
@@ -70,6 +79,7 @@ public class CalendarActivity extends Activity {
 
     }
 
+
     private void setCalendarDate(int month) {
         mCal.set(Calendar.MONTH, month - 1);
 
@@ -81,16 +91,12 @@ public class CalendarActivity extends Activity {
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long l_position) {
             Intent intent = new Intent(getApplicationContext(),ScheduleEditAct.class);
-
             int day = position - mCal.get(Calendar.DAY_OF_WEEK) - 5;
-            System.out.println("DDDDDDDDDDDDDDD___ "+day +" "+ mCal.get(Calendar.DAY_OF_WEEK));
 
-            intent.putExtra("Day",day);
+            intent.putExtra("TARGET_TIMESTAMP",day);
             startActivity(intent);
-
         }
     };
-
 
     private class GridAdapter extends BaseAdapter {
         private final List<String> list;
@@ -116,6 +122,19 @@ public class CalendarActivity extends Activity {
             return position;
         }
 
+        public int getDB(){
+
+
+
+
+            long toDay = System.currentTimeMillis();
+
+            Calendar mCalendar = Calendar. getInstance();
+            int getDay  = mCalendar.get(Calendar.DAY_OF_MONTH) + mCal.get(Calendar.DAY_OF_WEEK) + 5 +1;
+
+            return getDay;
+        }
+
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
 
@@ -136,9 +155,25 @@ public class CalendarActivity extends Activity {
             mCal = Calendar.getInstance();
             Integer today = mCal.get(Calendar.DAY_OF_MONTH);
             String sToday = String.valueOf(today);
-            if (sToday.equals(getItem(position))) {
-                holder.tvItemGridView.setTextColor(getResources().getColor(R.color.colorBlack));
+
+            // 일요일
+            if (position%7 == 0){
+                holder.tvItemGridView.setTextColor(getResources().getColor(R.color.colorRed));
             }
+            // 토요일
+            if (position%7 == 6){
+                holder.tvItemGridView.setTextColor(getResources().getColor(R.color.colorRipple));
+            }
+
+            // 오늘 날짜
+            if (sToday.equals(getItem(position))) {
+                holder.tvItemGridView.setBackgroundColor(getResources().getColor(R.color.colorBlue));
+            }
+            // DB 날짜 검정색
+            if (position == getDB()) {
+                holder.tvItemGridView.setTextColor(getResources().getColor(R.color.colorBlue));
+            }
+
             return convertView;
         }
     }

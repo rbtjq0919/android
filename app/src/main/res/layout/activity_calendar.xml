@@ -11,13 +11,48 @@
         android:layout_width="match_parent"
         android:layout_height="50dp"
         android:background="@color/colorBlue"
-        android:gravity="center_vertical"
-        android:paddingLeft="10dp"
-        android:textColor="@color/colorBlack"
+        android:gravity="center"
+        android:textColor="@color/colorWhite"
         android:textSize="20sp" />
 
-    <GridView
+    <LinearLayout
         android:layout_marginTop="10dp"
+        android:layout_marginBottom="30dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/left"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="저번달"
+            android:background="@color/colorWhite"
+            />
+
+        <Button
+            android:id="@+id/list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="모든 알람 목록"
+            android:background="@color/colorWhite"
+            />
+
+        <Button
+            android:id="@+id/right"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="다음달"
+            android:background="@color/colorWhite"
+            />
+
+    </LinearLayout>
+
+    <GridView
+        android:layout_marginTop="0dp"
         android:id="@+id/gridview"
         android:layout_weight="1"
         android:layout_height="0dp"

@@ -9,8 +9,8 @@
         android:gravity="center_horizontal"
         android:id="@+id/tv_item_gridview"
         android:layout_width="wrap_content"
-        android:layout_height="80dp"
-        android:textSize="20sp"
+        android:layout_height="60dp"
+        android:textSize="15sp"
         />
 
 </LinearLayout>

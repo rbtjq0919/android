@@ -6,13 +6,11 @@
     android:layout_height="match_parent"
     tools:context=".SplashAct">
 
-    <TextView
+    <ImageView
+        android:id="@+id/imageView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="GPS_ANDROID"
-        android:textSize="30dp"
-        android:textStyle="bold"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true" />
+        app:srcCompat="@drawable/splashimg" />
+
 
 </RelativeLayout>
