@@ -90,7 +90,8 @@ public class CalendarActivity extends Activity {
     private AdapterView.OnItemClickListener mItemClickListener = new AdapterView.OnItemClickListener() {
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long l_position) {
-            Intent intent = new Intent(getApplicationContext(),ScheduleEditAct.class);
+            //Intent intent = new Intent(getApplicationContext(),ScheduleEditAct.class);
+            Intent intent = new Intent(getApplicationContext(),ScheduleListAct.class);
             int day = position - mCal.get(Calendar.DAY_OF_WEEK) - 5;
 
             intent.putExtra("TARGET_TIMESTAMP",day);
@@ -167,11 +168,12 @@ public class CalendarActivity extends Activity {
 
             // 오늘 날짜
             if (sToday.equals(getItem(position))) {
-                holder.tvItemGridView.setBackgroundColor(getResources().getColor(R.color.colorBlue));
+                holder.tvItemGridView.setTextColor(getResources().getColor(R.color.colorBlack));
+                holder.tvItemGridView.setTextSize(17);
             }
-            // DB 날짜 검정색
+            // DB 날짜
             if (position == getDB()) {
-                holder.tvItemGridView.setTextColor(getResources().getColor(R.color.colorBlue));
+                holder.tvItemGridView.setTextColor(getResources().getColor(R.color.colorpurple));
             }
 
             return convertView;
