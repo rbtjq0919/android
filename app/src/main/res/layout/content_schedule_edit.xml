@@ -98,6 +98,7 @@
                     android:layout_weight="1"
                     android:gravity="center"
                     android:text="여기를 누르면 지도를 띄웁니다."
+                    android:onClick="onClickTextViewDestinationAddress"
                     android:textColor="@color/colorAccent"
                     android:textSize="20sp" />
             </TableRow>
