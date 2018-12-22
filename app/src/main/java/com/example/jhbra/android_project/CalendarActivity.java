@@ -19,6 +19,7 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
+import android.widget.Button;
 import android.widget.GridView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
@@ -33,6 +34,9 @@ public class CalendarActivity extends Activity {
     private ArrayList<String> dayList;
     private GridView gridView;
     private Calendar mCal;
+
+    int Year;
+    int Month;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,10 +51,11 @@ public class CalendarActivity extends Activity {
         final SimpleDateFormat curMonthFormat = new SimpleDateFormat("MM", Locale.KOREA);
         final SimpleDateFormat curDayFormat = new SimpleDateFormat("dd", Locale.KOREA);
 
+        Year =  Integer.parseInt(curYearFormat.format(date));
+        Month =  Integer.parseInt(curMonthFormat.format(date));
 
 
-
-        tvDate.setText(curYearFormat.format(date) + "/" + curMonthFormat.format(date));
+        tvDate.setText(Year + " " + Month);
         
         dayList = new ArrayList<String>();
         dayList.add("일");
@@ -76,7 +81,14 @@ public class CalendarActivity extends Activity {
         gridView.setAdapter(gridAdapter);
         gridView.setOnItemClickListener(mItemClickListener);
 
-
+        Button scheduleAllList = (Button) findViewById(R.id.list);
+        scheduleAllList.setOnClickListener(new Button.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(getApplicationContext(),ScheduleListAct.class);
+                startActivity(intent);
+            }
+        });
     }
 
 
@@ -90,11 +102,18 @@ public class CalendarActivity extends Activity {
     private AdapterView.OnItemClickListener mItemClickListener = new AdapterView.OnItemClickListener() {
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long l_position) {
-            Intent intent = new Intent(getApplicationContext(),ScheduleEditAct.class);
-            int day = position - mCal.get(Calendar.DAY_OF_WEEK) - 5;
+            int magin = mCal.get(Calendar.DAY_OF_WEEK) + 5;
+            if(position > magin) {
+                Intent intent = new Intent(getApplicationContext(), ScheduleListDayAct.class);
 
-            intent.putExtra("TARGET_TIMESTAMP",day);
-            startActivity(intent);
+                int day = position - magin;
+
+                intent.putExtra("TARGET_TIMESTAMP_DAY", day);
+                intent.putExtra("TARGET_TIMESTAMP_MONTH", Month);
+                intent.putExtra("TARGET_TIMESTAMP_YEAR", Year);
+
+                startActivity(intent);
+            }
         }
     };
 
@@ -167,11 +186,12 @@ public class CalendarActivity extends Activity {
 
             // 오늘 날짜
             if (sToday.equals(getItem(position))) {
-                holder.tvItemGridView.setBackgroundColor(getResources().getColor(R.color.colorBlue));
+                holder.tvItemGridView.setTextColor(getResources().getColor(R.color.colorBlack));
+                holder.tvItemGridView.setTextSize(17);
             }
-            // DB 날짜 검정색
+            // DB 날짜
             if (position == getDB()) {
-                holder.tvItemGridView.setTextColor(getResources().getColor(R.color.colorBlue));
+                holder.tvItemGridView.setTextColor(getResources().getColor(R.color.colorGreen));
             }
 
             return convertView;

@@ -1,17 +1,26 @@
 package com.example.jhbra.android_project;
 
+import android.Manifest;
 import android.app.DatePickerDialog;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
+import android.location.Address;
+import android.location.Geocoder;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
@@ -28,14 +37,22 @@ import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.ui.PlacePicker;
+import com.google.android.gms.maps.model.LatLng;
+
+import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.List;
+import java.util.Locale;
 
 public class ScheduleEditAct extends AppCompatActivity {
 
     public static final String ARG_SCHEDULE_ID = "SCHEDULE_ID";
     public static final String ARG_TARGET_TIMESTAMP = "TARGET_TIMESTAMP";
+    public static final int REQUEST_PLACE_PICKER = 5;
 
     @Nullable
     private Long mScheduleID;
@@ -49,6 +66,8 @@ public class ScheduleEditAct extends AppCompatActivity {
     private Date mDepartureDate;
     @NonNull
     private Transportation mTransport = Transportation.CAR;
+    @Nullable
+    private Location mCurLocation;
 
     public ScheduleEditAct() {
         long millis = (System.currentTimeMillis() + 25 * 60 * 60 * 1000);
@@ -111,12 +130,70 @@ public class ScheduleEditAct extends AppCompatActivity {
         }
     }
 
+    /**
+     * https://stackoverflow.com/a/38548560
+     *
+     * @param latitude
+     * @param longitude
+     * @return string
+     */
+    public static String getFormattedLocationInDegree(double latitude, double longitude) {
+        try {
+            int latSeconds = (int) Math.round(latitude * 3600);
+            int latDegrees = latSeconds / 3600;
+            latSeconds = Math.abs(latSeconds % 3600);
+            int latMinutes = latSeconds / 60;
+            latSeconds %= 60;
+
+            int longSeconds = (int) Math.round(longitude * 3600);
+            int longDegrees = longSeconds / 3600;
+            longSeconds = Math.abs(longSeconds % 3600);
+            int longMinutes = longSeconds / 60;
+            longSeconds %= 60;
+            String latDegree = latDegrees >= 0 ? "N" : "S";
+            String lonDegrees = longDegrees >= 0 ? "E" : "W";
+
+            return Math.abs(latDegrees) + "°" + latMinutes + "'" + latSeconds
+                    + "\"" + latDegree + " " + Math.abs(longDegrees) + "°" + longMinutes
+                    + "'" + longSeconds + "\"" + lonDegrees;
+        } catch (Exception e) {
+            return "" + String.format("%8.5f", latitude) + "  "
+                    + String.format("%8.5f", longitude);
+        }
+    }
+
+    private String geocodeLocation(double latitude, double longitude) {
+        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+        String addressStr = null;
+        try {
+            List<Address> addressList
+                    = geocoder.getFromLocation(latitude, longitude, 1);
+            Address address = addressList.get(0);
+            StringBuilder sb = new StringBuilder();
+            sb.append(address.getCountryName());
+            sb.append(' ');
+            sb.append(address.getAdminArea());
+            sb.append(' ');
+            sb.append(address.getSubAdminArea());
+            sb.append(' ');
+            sb.append(address.getLocality());
+            addressStr = sb.toString();
+        } catch (IOException e) {
+            Log.e("ScheduleEditAct", "geocodeLocation: cannot convert longitude " +
+                    "and latitude to a geo-coded address!", e);
+            addressStr = getFormattedLocationInDegree(latitude, longitude);
+        }
+        return addressStr;
+    }
+
     private boolean initValuesAndViews() {
         TextView textViewToolbar = (TextView) findViewById(R.id.textViewToolbar);
         EditText editTextTitle = (EditText) findViewById(R.id.editTextTitle);
         EditText editTextMemo = (EditText) findViewById(R.id.editTextMemo);
         TextView textViewTargetDate = (TextView) findViewById(R.id.textViewTargetDate);
         TimePicker timePicker = (TimePicker) findViewById(R.id.timePickerTargetTime);
+        TextView textViewDestinationAddress
+                = (TextView) findViewById(R.id.textViewDestinationAddress);
         TextView textViewTransport = (TextView) findViewById(R.id.textViewTransportation);
 
         if (mScheduleID != null) {
@@ -207,6 +284,11 @@ public class ScheduleEditAct extends AppCompatActivity {
         timePicker.setHour(calendar.get(Calendar.HOUR_OF_DAY));
         timePicker.setMinute(calendar.get(Calendar.MINUTE));
 
+        // Set destination address view
+        if (mLongitude != null && mLatitude != null) {
+            textViewDestinationAddress.setText(geocodeLocation(mLatitude, mLongitude));
+        }
+
         // Set transportation view
         String[] transports = getResources().getStringArray(R.array.transportation);
         textViewTransport.setText(transports[mTransport.getNum()]);
@@ -294,6 +376,30 @@ public class ScheduleEditAct extends AppCompatActivity {
         textViewDepartureTime.setText(departureTimeStr);
     }
 
+    private void calculateAndUpdateDistance() {
+        if (mCurLocation == null || mLongitude == null || mLatitude == null) {
+            return;
+        }
+        Location destination = new Location("destination");
+        destination.setLongitude(mLongitude);
+        destination.setLatitude(mLatitude);
+        float distance = destination.distanceTo(mCurLocation);
+        int moveDuration = (int) Math.ceil(distance / (mTransport.getVelocity() * 1000.0 / 60.0));
+        if (moveDuration < 3) {
+            moveDuration = 3;
+        }
+        Log.i("ScheduleEditAct", String.format("calculateAndUpdateDistance: distance = %.2f m, "
+                + "velocity = %.2f km/h, moveDuration = %d min", distance, mTransport.getVelocity(),
+                moveDuration));
+        EditText editTextMoveDuration
+                = (EditText) findViewById(R.id.editTextMoveDuration);
+        String moveDurationStr = String.valueOf(moveDuration);
+        editTextMoveDuration.setText(moveDurationStr);
+        updateDepartureTimeAndView();
+        Toast.makeText(this, "예상 소요 시간이 자동으로 갱신되었습니다.",
+                Toast.LENGTH_LONG).show();
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -303,23 +409,33 @@ public class ScheduleEditAct extends AppCompatActivity {
         if (args != null) {
             Log.i("ScheduleEditAct", "Intent bundle is given");
             // mScheduleID
-            long scheduleID = args.getLong(ARG_SCHEDULE_ID, -1);
-            if (scheduleID != -1) {
-                mScheduleID = Long.valueOf(scheduleID);
+            try {
+                long scheduleID = args.getLong(ARG_SCHEDULE_ID, -1);
+                if (scheduleID != -1) {
+                    mScheduleID = Long.valueOf(scheduleID);
+                }
+            } catch (Exception e) {
+                Log.e("ScheduleEditAct", "onCreate: wrong bundle! invalid "
+                        + ARG_SCHEDULE_ID, e);
             }
             // mTargetDate
-            long millis = args.getLong(ARG_TARGET_TIMESTAMP);
-            if (millis != 0) {
-                // Discard time under hour
-                millis -= millis % (60 * 60 * 1000);
-                mTargetDate = new Date(millis);
+            try {
+                long millis = args.getLong(ARG_TARGET_TIMESTAMP);
+                if (millis != 0) {
+                    // Discard time under hour
+                    millis -= millis % (60 * 60 * 1000);
+                    mTargetDate = new Date(millis);
+                }
+            } catch (Exception e) {
+                Log.e("ScheduleEditAct", "onCreate: wrong bundle! invalid "
+                        + ARG_TARGET_TIMESTAMP, e);
             }
         } else {
             Log.i("ScheduleEditAct", "No intent bundle!");
         }
 
-        // TODO: disable test ID
-        mScheduleID = 1L;
+        // Testing update mode (forced)
+        //mScheduleID = 1L;
 
         // Log values
         if (mScheduleID != null) {
@@ -422,11 +538,91 @@ public class ScheduleEditAct extends AppCompatActivity {
             }
         };
         editTextMoveDuration.addTextChangedListener(moveDurationTextWatcher);
+
+        // Get current location
+        LocationManager locationManager
+                = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        LocationListener locationListener = new LocationListener() {
+            @Override
+            public void onLocationChanged(Location location) {
+                Log.d("ScheduleEditAct", "onLocationChanged: got the location => "
+                        + "longitude = " + location.getLongitude() + ", latitude = "
+                        + location.getLatitude());
+                mCurLocation = location;
+                // Update view
+                TextView textViewCurLocation
+                        = (TextView) findViewById(R.id.textViewCurrentLocation);
+                textViewCurLocation.setText(
+                        geocodeLocation(location.getLatitude(), location.getLongitude()));
+            }
+
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+            }
+
+            @Override
+            public void onProviderEnabled(String provider) {
+            }
+
+            @Override
+            public void onProviderDisabled(String provider) {
+            }
+        };
+
+        if (ActivityCompat.checkSelfPermission(
+                this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(
+                this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED)
+            return;
+
+        if (locationManager.getAllProviders().contains(LocationManager.NETWORK_PROVIDER)) {
+            locationManager.requestLocationUpdates(
+                    LocationManager.NETWORK_PROVIDER, 0, 0, locationListener);
+        }
+
+        if (locationManager.getAllProviders().contains(LocationManager.GPS_PROVIDER)) {
+            locationManager.requestLocationUpdates(
+                    LocationManager.GPS_PROVIDER, 0, 0, locationListener);
+        }
     }
 
     @Override
     public void onResume() {
         super.onResume();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_PLACE_PICKER) {
+            Log.d("ScheduleEditAct", "onActivityResult: requestCode = " +
+                    "REQUEST_PLACE_PICKER, resultCode = " + resultCode);
+            if (resultCode == RESULT_OK) {
+                // Get place
+                Place place = PlacePicker.getPlace(this, data);
+                // Set TextView
+                TextView textViewDestinationAddress
+                        = (TextView) findViewById(R.id.textViewDestinationAddress);
+                textViewDestinationAddress.setText(place.getName());
+                // Set longitude and latitude
+                LatLng latLng = place.getLatLng();
+                mLongitude = latLng.longitude;
+                mLatitude = latLng.latitude;
+                Log.d("ScheduleEditAct", "onActivityResult: place selected => " +
+                        "longitude = " + mLongitude + ", latitude = " + mLatitude);
+                Toast.makeText(this, "장소를 선택했습니다.",
+                        Toast.LENGTH_SHORT).show();
+                // Update move duration
+                calculateAndUpdateDistance();
+            } else if (resultCode == RESULT_CANCELED) {
+                Toast.makeText(this, "장소 선택을 취소했습니다.",
+                        Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            Log.d("ScheduleEditAct", "onActivityResult: requestCode = " +
+                    "unknown (" + requestCode + "), resultCode = " + resultCode);
+        }
     }
 
     public void onClickTargetDate(View v) {
@@ -447,7 +643,7 @@ public class ScheduleEditAct extends AppCompatActivity {
                         mTargetDate = new GregorianCalendar(year, month, dayOfMonth,
                                 calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE))
                                 .getTime();
-                        textViewTargetDate.setText(String.format("%04d-%02d-%02d", year, month,
+                        textViewTargetDate.setText(String.format("%04d-%02d-%02d", year, month + 1,
                                 dayOfMonth));
                         Log.d("ScheduleEditAct", "onDateSet: mTargetDate is "
                                 + mTargetDate.toString());
@@ -459,6 +655,16 @@ public class ScheduleEditAct extends AppCompatActivity {
                 calendar.get(Calendar.DAY_OF_MONTH)
         );
         datePickerDialog.show();
+    }
+
+    public void onClickTextViewDestinationAddress(View v) {
+        PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
+        try {
+            startActivityForResult(builder.build(this), REQUEST_PLACE_PICKER);
+        } catch (Exception e) {
+            Log.e("ScheduleEditAct", "onClickTextViewDestinationAddress: failed to " +
+                    "startActivityForResult()", e);
+        }
     }
 
     public void onClickTransportation(View v) {
@@ -492,6 +698,7 @@ public class ScheduleEditAct extends AppCompatActivity {
                                             + "Cannot comprehend selection " + which
                                             + " (" + transports[which] + ")");
                                 }
+                                calculateAndUpdateDistance();
                             }
                         }
                 )
