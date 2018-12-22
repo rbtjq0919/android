@@ -33,7 +33,8 @@
             android:exported="true"
             android:label="@string/title_activity_schedule_edit"
             android:theme="@style/AppTheme" />
-        <activity android:name=".CalendarActivity"></activity>
+        <activity android:name=".CalendarActivity" />
+        <activity android:name=".ScheduleListAct"></activity>
     </application>
 
 </manifest>
