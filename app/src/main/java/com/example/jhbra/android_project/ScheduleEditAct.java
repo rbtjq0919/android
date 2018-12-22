@@ -300,9 +300,8 @@ public class ScheduleEditAct extends AppCompatActivity {
     public void onClickTransportation(View v) {
         hideSoftKeyboard();
 
-        TextView textViewTransport = (TextView) findViewById(R.id.textViewTransportation);
         new AlertDialog.Builder(this)
-                .setTitle("대세는 누구?")
+                .setTitle("이동수단을 선택하세요")
                 .setItems(R.array.transportation,
                         new DialogInterface.OnClickListener() {
                             @Override
@@ -332,7 +331,7 @@ public class ScheduleEditAct extends AppCompatActivity {
                             }
                         }
                 )
-                .setNegativeButton("없어!", new DialogInterface.OnClickListener() {
+                .setNegativeButton("취소", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int button) {
                         switch (button) {
