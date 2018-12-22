@@ -34,6 +34,9 @@ public class CalendarActivity extends Activity {
     private ArrayList<String> dayList;
     private GridView gridView;
     private Calendar mCal;
+
+    int Year;
+    int Month;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,10 +51,11 @@ public class CalendarActivity extends Activity {
         final SimpleDateFormat curMonthFormat = new SimpleDateFormat("MM", Locale.KOREA);
         final SimpleDateFormat curDayFormat = new SimpleDateFormat("dd", Locale.KOREA);
 
+        Year =  Integer.parseInt(curYearFormat.format(date));
+        Month =  Integer.parseInt(curMonthFormat.format(date));
 
 
-
-        tvDate.setText(curYearFormat.format(date) + "/" + curMonthFormat.format(date));
+        tvDate.setText(Year + " " + Month);
         
         dayList = new ArrayList<String>();
         dayList.add("일");
@@ -104,7 +108,10 @@ public class CalendarActivity extends Activity {
 
                 int day = position - magin;
 
-                intent.putExtra("TARGET_TIMESTAMP", day);
+                intent.putExtra("TARGET_TIMESTAMP_DAY", day);
+                intent.putExtra("TARGET_TIMESTAMP_MONTH", Month);
+                intent.putExtra("TARGET_TIMESTAMP_YEAR", Year);
+
                 startActivity(intent);
             }
         }
