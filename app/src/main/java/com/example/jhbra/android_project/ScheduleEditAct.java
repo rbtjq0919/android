@@ -9,6 +9,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
+import android.location.Address;
+import android.location.Geocoder;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -33,9 +35,12 @@ import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlacePicker;
 import com.google.android.gms.maps.model.LatLng;
 
+import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.List;
+import java.util.Locale;
 
 public class ScheduleEditAct extends AppCompatActivity {
 
@@ -117,12 +122,46 @@ public class ScheduleEditAct extends AppCompatActivity {
         }
     }
 
+
+    /**
+     * https://stackoverflow.com/a/38548560
+     * @param latitude
+     * @param longitude
+     * @return string
+     */
+    public static String getFormattedLocationInDegree(double latitude, double longitude) {
+        try {
+            int latSeconds = (int) Math.round(latitude * 3600);
+            int latDegrees = latSeconds / 3600;
+            latSeconds = Math.abs(latSeconds % 3600);
+            int latMinutes = latSeconds / 60;
+            latSeconds %= 60;
+
+            int longSeconds = (int) Math.round(longitude * 3600);
+            int longDegrees = longSeconds / 3600;
+            longSeconds = Math.abs(longSeconds % 3600);
+            int longMinutes = longSeconds / 60;
+            longSeconds %= 60;
+            String latDegree = latDegrees >= 0 ? "N" : "S";
+            String lonDegrees = longDegrees >= 0 ? "E" : "W";
+
+            return  Math.abs(latDegrees) + "°" + latMinutes + "'" + latSeconds
+                    + "\"" + latDegree +" "+ Math.abs(longDegrees) + "°" + longMinutes
+                    + "'" + longSeconds + "\"" + lonDegrees;
+        } catch (Exception e) {
+            return ""+ String.format("%8.5f", latitude) + "  "
+                    + String.format("%8.5f", longitude) ;
+        }
+    }
+
     private boolean initValuesAndViews() {
         TextView textViewToolbar = (TextView) findViewById(R.id.textViewToolbar);
         EditText editTextTitle = (EditText) findViewById(R.id.editTextTitle);
         EditText editTextMemo = (EditText) findViewById(R.id.editTextMemo);
         TextView textViewTargetDate = (TextView) findViewById(R.id.textViewTargetDate);
         TimePicker timePicker = (TimePicker) findViewById(R.id.timePickerTargetTime);
+        TextView textViewDestinationAddress
+                = (TextView) findViewById(R.id.textViewDestinationAddress);
         TextView textViewTransport = (TextView) findViewById(R.id.textViewTransportation);
 
         if (mScheduleID != null) {
@@ -212,6 +251,31 @@ public class ScheduleEditAct extends AppCompatActivity {
         calendar.setTime(mTargetDate);
         timePicker.setHour(calendar.get(Calendar.HOUR_OF_DAY));
         timePicker.setMinute(calendar.get(Calendar.MINUTE));
+
+        // Set destination address view
+        if (mLongitude != null && mLatitude != null) {
+            Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+            String addressStr = null;
+            try {
+                List<Address> addressList
+                        = geocoder.getFromLocation(mLatitude, mLongitude, 1);
+                Address address = addressList.get(0);
+                StringBuilder sb = new StringBuilder();
+                sb.append(address.getCountryName());
+                sb.append(' ');
+                sb.append(address.getAdminArea());
+                sb.append(' ');
+                sb.append(address.getSubAdminArea());
+                sb.append(' ');
+                sb.append(address.getLocality());
+                addressStr = sb.toString();
+            } catch (IOException e) {
+                Log.e("ScheduleEditAct", "initValuesAndViews: cannot convert longitude " +
+                        "and latitude to a geo-coded address!", e);
+                addressStr = getFormattedLocationInDegree(mLatitude, mLongitude);
+            }
+            textViewDestinationAddress.setText(addressStr);
+        }
 
         // Set transportation view
         String[] transports = getResources().getStringArray(R.array.transportation);
