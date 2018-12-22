@@ -185,21 +185,19 @@
                         android:layout_weight="1"
                         android:text="YYYY-MM-DD HH:MM AM"
                         android:textAlignment="center"
-                        android:textColor="@android:color/darker_gray"
+                        android:textColor="@color/colorGray"
                         android:textSize="18sp" />
 
                     <Switch
                         android:id="@+id/switchToggleAlarm"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:checked="true"
+                        android:checked="false"
                         android:paddingBottom="12dp"
                         android:paddingStart="6dp"
                         android:paddingEnd="0dp"
                         android:paddingTop="12dp"
-                        android:switchMinWidth="50dp"
-                        android:textOff="OFF"
-                        android:textOn="ON" />
+                        android:switchMinWidth="56dp"/>
 
                 </LinearLayout>
             </TableRow>

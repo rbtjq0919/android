@@ -18,8 +18,10 @@ import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.CompoundButton;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
@@ -93,6 +95,18 @@ public class ScheduleEditAct extends AppCompatActivity {
         return null;
     }
 
+    private void postToggleAlarm(boolean isChecked) {
+        TextView textViewDepartureTime
+                = (TextView) findViewById(R.id.textViewDepartureTime);
+        if (isChecked) {
+            textViewDepartureTime.setTextColor(
+                    getResources().getColor(R.color.colorBlack, null));
+        } else {
+            textViewDepartureTime.setTextColor(
+                    getResources().getColor(R.color.colorGray, null));
+        }
+    }
+
     private boolean initValuesAndViews() {
         TextView textViewToolbar = (TextView) findViewById(R.id.textViewToolbar);
         EditText editTextTitle = (EditText) findViewById(R.id.editTextTitle);
@@ -132,7 +146,7 @@ public class ScheduleEditAct extends AppCompatActivity {
 
             Transportation transportSelected = null;
             for (Transportation t : Transportation.values()) {
-                if (t.getDBText() == tranportDBText) {
+                if (t.getDBText().equals(tranportDBText)) {
                     transportSelected = t;
                     break;
                 }
@@ -143,6 +157,16 @@ public class ScheduleEditAct extends AppCompatActivity {
                 Log.e("ScheduleEditAct", "initValuesAndViews: "
                         + "Cannot comprehend DB column \"transport\": " + tranportDBText);
                 return false;
+            }
+
+            Integer alarmEnabledInteger = cv.getAsInteger("alarm");
+            Switch switchToggleAlarm = (Switch) findViewById(R.id.switchToggleAlarm);
+            if (alarmEnabledInteger.intValue() == 1) {
+                switchToggleAlarm.setChecked(true);
+                //postToggleAlarm(true);
+            } else {
+                switchToggleAlarm.setChecked(false);
+                //postToggleAlarm(false);
             }
         } else {
             // Set toolbar label
@@ -197,6 +221,9 @@ public class ScheduleEditAct extends AppCompatActivity {
 
         cv.put("transport", mTransport.getDBText());
 
+        Switch switchToggleAlarm = (Switch) findViewById(R.id.switchToggleAlarm);
+        cv.put("alarm", switchToggleAlarm.isChecked() ? 1 : 0);
+
         String memo = editTextMemo.getText().toString().trim();
         cv.put("memo", memo);
 
@@ -226,6 +253,9 @@ public class ScheduleEditAct extends AppCompatActivity {
         } else {
             Log.i("ScheduleEditAct", "No intent bundle!");
         }
+
+        // TODO: disable test ID
+        mScheduleID = 1L;
 
         // Log values
         if (mScheduleID != null) {
@@ -257,6 +287,15 @@ public class ScheduleEditAct extends AppCompatActivity {
                         minute).getTime();
                 Log.d("ScheduleEditAct", "onTimeChanged: mTargetDate is "
                         + mTargetDate.toString());
+            }
+        });
+
+        // Register Switch to toggle alarm
+        Switch switchToggleAlarm = (Switch) findViewById(R.id.switchToggleAlarm);
+        switchToggleAlarm.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                postToggleAlarm(isChecked);
             }
         });
     }
