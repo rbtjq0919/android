@@ -75,8 +75,7 @@ public class ScheduleEditAct extends AppCompatActivity {
         imm.hideSoftInputFromWindow(findViewById(R.id.editTextMemo).getWindowToken(), 0);
     }
 
-    private @Nullable
-    ContentValues fetchScheduleByID() {
+    private @Nullable ContentValues fetchScheduleByID() {
         Uri uri = ContentUris.withAppendedId(DBProvider.CONTENT_URI, mScheduleID);
         Log.d("ScheduleEditAct", "initViewsFromScheduleID: querying to "
                 + uri.toString());
@@ -121,7 +120,6 @@ public class ScheduleEditAct extends AppCompatActivity {
                     getResources().getColor(R.color.colorGray, null));
         }
     }
-
 
     /**
      * https://stackoverflow.com/a/38548560
@@ -547,7 +545,7 @@ public class ScheduleEditAct extends AppCompatActivity {
                         mTargetDate = new GregorianCalendar(year, month, dayOfMonth,
                                 calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE))
                                 .getTime();
-                        textViewTargetDate.setText(String.format("%04d-%02d-%02d", year, month,
+                        textViewTargetDate.setText(String.format("%04d-%02d-%02d", year, month + 1,
                                 dayOfMonth));
                         Log.d("ScheduleEditAct", "onDateSet: mTargetDate is "
                                 + mTargetDate.toString());
