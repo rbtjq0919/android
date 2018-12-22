@@ -1,5 +1,6 @@
 package com.example.jhbra.android_project;
 
+import android.Manifest;
 import android.app.DatePickerDialog;
 import android.content.ContentResolver;
 import android.content.ContentUris;
@@ -7,14 +8,19 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.location.Address;
 import android.location.Geocoder;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
@@ -60,6 +66,8 @@ public class ScheduleEditAct extends AppCompatActivity {
     private Date mDepartureDate;
     @NonNull
     private Transportation mTransport = Transportation.CAR;
+    @Nullable
+    private Location mCurLocation;
 
     public ScheduleEditAct() {
         long millis = (System.currentTimeMillis() + 25 * 60 * 60 * 1000);
@@ -75,7 +83,8 @@ public class ScheduleEditAct extends AppCompatActivity {
         imm.hideSoftInputFromWindow(findViewById(R.id.editTextMemo).getWindowToken(), 0);
     }
 
-    private @Nullable ContentValues fetchScheduleByID() {
+    private @Nullable
+    ContentValues fetchScheduleByID() {
         Uri uri = ContentUris.withAppendedId(DBProvider.CONTENT_URI, mScheduleID);
         Log.d("ScheduleEditAct", "initViewsFromScheduleID: querying to "
                 + uri.toString());
@@ -123,6 +132,7 @@ public class ScheduleEditAct extends AppCompatActivity {
 
     /**
      * https://stackoverflow.com/a/38548560
+     *
      * @param latitude
      * @param longitude
      * @return string
@@ -143,12 +153,12 @@ public class ScheduleEditAct extends AppCompatActivity {
             String latDegree = latDegrees >= 0 ? "N" : "S";
             String lonDegrees = longDegrees >= 0 ? "E" : "W";
 
-            return  Math.abs(latDegrees) + "°" + latMinutes + "'" + latSeconds
-                    + "\"" + latDegree +" "+ Math.abs(longDegrees) + "°" + longMinutes
+            return Math.abs(latDegrees) + "°" + latMinutes + "'" + latSeconds
+                    + "\"" + latDegree + " " + Math.abs(longDegrees) + "°" + longMinutes
                     + "'" + longSeconds + "\"" + lonDegrees;
         } catch (Exception e) {
-            return ""+ String.format("%8.5f", latitude) + "  "
-                    + String.format("%8.5f", longitude) ;
+            return "" + String.format("%8.5f", latitude) + "  "
+                    + String.format("%8.5f", longitude);
         }
     }
 
@@ -371,16 +381,26 @@ public class ScheduleEditAct extends AppCompatActivity {
         if (args != null) {
             Log.i("ScheduleEditAct", "Intent bundle is given");
             // mScheduleID
-            long scheduleID = args.getLong(ARG_SCHEDULE_ID, -1);
-            if (scheduleID != -1) {
-                mScheduleID = Long.valueOf(scheduleID);
+            try {
+                long scheduleID = args.getLong(ARG_SCHEDULE_ID, -1);
+                if (scheduleID != -1) {
+                    mScheduleID = Long.valueOf(scheduleID);
+                }
+            } catch (Exception e) {
+                Log.e("ScheduleEditAct", "onCreate: wrong bundle! invalid "
+                        + ARG_SCHEDULE_ID, e);
             }
             // mTargetDate
-            long millis = args.getLong(ARG_TARGET_TIMESTAMP);
-            if (millis != 0) {
-                // Discard time under hour
-                millis -= millis % (60 * 60 * 1000);
-                mTargetDate = new Date(millis);
+            try {
+                long millis = args.getLong(ARG_TARGET_TIMESTAMP);
+                if (millis != 0) {
+                    // Discard time under hour
+                    millis -= millis % (60 * 60 * 1000);
+                    mTargetDate = new Date(millis);
+                }
+            } catch (Exception e) {
+                Log.e("ScheduleEditAct", "onCreate: wrong bundle! invalid "
+                        + ARG_TARGET_TIMESTAMP, e);
             }
         } else {
             Log.i("ScheduleEditAct", "No intent bundle!");
@@ -490,6 +510,49 @@ public class ScheduleEditAct extends AppCompatActivity {
             }
         };
         editTextMoveDuration.addTextChangedListener(moveDurationTextWatcher);
+
+        // Get current location
+        LocationManager locationManager
+                = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        LocationListener locationListener = new LocationListener() {
+            @Override
+            public void onLocationChanged(Location location) {
+                Log.d("ScheduleEditAct", "onLocationChanged: got the location => "
+                        + "longitude = " + location.getLongitude() + ", latitude = "
+                        + location.getLatitude());
+                mCurLocation = location;
+            }
+
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+            }
+
+            @Override
+            public void onProviderEnabled(String provider) {
+            }
+
+            @Override
+            public void onProviderDisabled(String provider) {
+            }
+        };
+
+        if (ActivityCompat.checkSelfPermission(
+                this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(
+                this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED)
+            return;
+
+        if (locationManager.getAllProviders().contains(LocationManager.NETWORK_PROVIDER)) {
+            locationManager.requestLocationUpdates(
+                    LocationManager.NETWORK_PROVIDER, 0, 0, locationListener);
+        }
+
+        if (locationManager.getAllProviders().contains(LocationManager.GPS_PROVIDER)) {
+            locationManager.requestLocationUpdates(
+                    LocationManager.GPS_PROVIDER, 0, 0, locationListener);
+        }
     }
 
     @Override
@@ -523,7 +586,7 @@ public class ScheduleEditAct extends AppCompatActivity {
             }
         } else {
             Log.d("ScheduleEditAct", "onActivityResult: requestCode = " +
-                    "unknown (" + requestCode +  "), resultCode = " + resultCode);
+                    "unknown (" + requestCode + "), resultCode = " + resultCode);
         }
     }
 
