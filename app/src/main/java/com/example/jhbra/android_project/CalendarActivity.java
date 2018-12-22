@@ -123,12 +123,14 @@ public class CalendarActivity extends Activity {
         }
 
         public int getDB(){
+
+
+
+
             long toDay = System.currentTimeMillis();
 
             Calendar mCalendar = Calendar. getInstance();
             int getDay  = mCalendar.get(Calendar.DAY_OF_MONTH) + mCal.get(Calendar.DAY_OF_WEEK) + 5 +1;
-
-            System.out.println("---------------------"+getDay);
 
             return getDay;
         }
@@ -154,9 +156,20 @@ public class CalendarActivity extends Activity {
             Integer today = mCal.get(Calendar.DAY_OF_MONTH);
             String sToday = String.valueOf(today);
 
-            if (sToday.equals(getItem(position))) {
-                holder.tvItemGridView.setTextColor(getResources().getColor(R.color.colorBlack));
+            // 일요일
+            if (position%7 == 0){
+                holder.tvItemGridView.setTextColor(getResources().getColor(R.color.colorRed));
             }
+            // 토요일
+            if (position%7 == 6){
+                holder.tvItemGridView.setTextColor(getResources().getColor(R.color.colorRipple));
+            }
+
+            // 오늘 날짜
+            if (sToday.equals(getItem(position))) {
+                holder.tvItemGridView.setBackgroundColor(getResources().getColor(R.color.colorBlue));
+            }
+            // DB 날짜 검정색
             if (position == getDB()) {
                 holder.tvItemGridView.setTextColor(getResources().getColor(R.color.colorBlue));
             }
