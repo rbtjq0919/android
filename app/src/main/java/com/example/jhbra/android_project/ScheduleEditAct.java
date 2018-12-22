@@ -43,6 +43,8 @@ public class ScheduleEditAct extends AppCompatActivity {
     private Double mLongitude;
     @Nullable
     private Double mLatitude;
+    @Nullable
+    private Date mDepartureDate;
     @NonNull
     private Transportation mTransport = Transportation.CAR;
 
@@ -138,12 +140,8 @@ public class ScheduleEditAct extends AppCompatActivity {
             } catch (NullPointerException e) {
             }
 
-            String memo = cv.getAsString("memo");
-            editTextMemo.setText(memo);
-
             // Set transportation
             String tranportDBText = cv.getAsString("transport");
-
             Transportation transportSelected = null;
             for (Transportation t : Transportation.values()) {
                 if (t.getDBText().equals(tranportDBText)) {
@@ -159,15 +157,31 @@ public class ScheduleEditAct extends AppCompatActivity {
                 return false;
             }
 
+            // Set departure time
+            Long departureTime = cv.getAsLong("departure");
+            String departureTimeStr = null;
+            if (departureTime != null) {
+                mDepartureDate = new Date(departureTime);
+                departureTimeStr = DateFormat.format("yyyy-MM-dd HH:mm aa", mDepartureDate)
+                        .toString();
+            } else {
+                departureTimeStr = "미정";
+            }
+            TextView textViewDepartureTime = (TextView) findViewById(R.id.textViewDepartureTime);
+            textViewDepartureTime.setText(departureTimeStr);
+
             Integer alarmEnabledInteger = cv.getAsInteger("alarm");
             Switch switchToggleAlarm = (Switch) findViewById(R.id.switchToggleAlarm);
             if (alarmEnabledInteger.intValue() == 1) {
                 switchToggleAlarm.setChecked(true);
-                //postToggleAlarm(true);
+                postToggleAlarm(true);
             } else {
                 switchToggleAlarm.setChecked(false);
-                //postToggleAlarm(false);
+                postToggleAlarm(false);
             }
+
+            String memo = cv.getAsString("memo");
+            editTextMemo.setText(memo);
         } else {
             // Set toolbar label
             textViewToolbar.setText("일정 추가");
@@ -295,7 +309,16 @@ public class ScheduleEditAct extends AppCompatActivity {
         switchToggleAlarm.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                hideSoftKeyboard();
                 postToggleAlarm(isChecked);
+            }
+        });
+        TextView textViewDepartureTime = (TextView) findViewById(R.id.textViewDepartureTime);
+        textViewDepartureTime.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Switch switchToggleAlarm = (Switch) findViewById(R.id.switchToggleAlarm);
+                switchToggleAlarm.toggle();
             }
         });
     }
