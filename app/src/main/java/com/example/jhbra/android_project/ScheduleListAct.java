@@ -38,7 +38,6 @@ public class ScheduleListAct extends ListActivity {
                 public void onClick(View view) {
 
                     Intent intent = new Intent(getApplicationContext(),ScheduleEditAct.class);
-                    intent.putExtra("TARGET_TIMESTAMP",0);
                     startActivity(intent);
                 }
             });

@@ -13,18 +13,25 @@ import android.widget.ListAdapter;
 import android.widget.SimpleCursorAdapter;
 import android.widget.Toast;
 
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+
 public class ScheduleListDayAct extends ListActivity {
 
-    public static final String ARG_WHERE = "WHERE";
-    public static final String SQL_WHERE_DEFAULT = "";
+    public static final String ARG_WHERE = "TARGET_TIMESTAMP";
 
-    String mArgWhere = SQL_WHERE_DEFAULT;
     ListAdapter adapter;
+    int toYear = 0;
+    int toMonth = 0;
+    int toDay = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_schedule_list_day);
+
+        Intent intent = getIntent();
+        toDay = intent.getExtras().getInt("TARGET_TIMESTAMP");
 
 
         Button scheduleAdd = (Button) findViewById(R.id.scheduleaddbutton);
@@ -33,7 +40,10 @@ public class ScheduleListDayAct extends ListActivity {
             public void onClick(View view) {
 
                 Intent intent = new Intent(getApplicationContext(),ScheduleEditAct.class);
-                intent.putExtra("TARGET_TIMESTAMP",0);
+                intent.putExtra("TARGET_TIMESTAMP_DAY",toDay);
+                intent.putExtra("TARGET_TIMESTAMP_MONTH",toMonth);
+                intent.putExtra("TARGET_TIMESTAMP_YEAR",toYear);
+
                 startActivity(intent);
             }
         });
@@ -48,7 +58,6 @@ public class ScheduleListDayAct extends ListActivity {
         super.onResume();
         Bundle args = getIntent().getExtras();
         if (args != null) {
-            mArgWhere = args.getString(ARG_WHERE, SQL_WHERE_DEFAULT);
         }
         loadDB();
     }
@@ -57,11 +66,22 @@ public class ScheduleListDayAct extends ListActivity {
     protected void loadDB() {
         ContentResolver cr = getContentResolver();
 
+        String selection = "";
+        if (toYear != 0 && toMonth != 0 && toDay != 0) {
+            long timestamp = new GregorianCalendar(toYear, toMonth, toDay, 0, 0)
+                    .getTime().getTime();
+            selection = "millis >= " + timestamp + " and millis < " + (timestamp + 86400);
+        }
+
         try {
             // SELECT
             Cursor cur = cr.query(Uri.parse("content://moapp1.gps.calendar/schedule"),
-                    null, mArgWhere, null, null);
+                    null, selection, null, null);
             startManagingCursor(cur);
+
+            int a = cur.getInt(3);
+
+            System.out.println(a);
 
             // Set ListAdapter
             adapter = new SimpleCursorAdapter(
