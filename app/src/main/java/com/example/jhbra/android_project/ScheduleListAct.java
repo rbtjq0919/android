@@ -43,8 +43,14 @@ public class ScheduleListAct extends ListActivity {
             });
 
 
-
         }
+    @Override
+    protected void onListItemClick(ListView l, View v, int position, long id) {
+        super.onListItemClick(l, v, position, id);
+        System.out.println("----------------"+position);
+
+    }
+
 
 
         @Override
@@ -67,6 +73,7 @@ public class ScheduleListAct extends ListActivity {
                         null, mArgWhere, null, null);
                 startManagingCursor(cur);
 
+
                 // Set ListAdapter
                 adapter = new SimpleCursorAdapter(
                         this,
@@ -81,6 +88,7 @@ public class ScheduleListAct extends ListActivity {
                         0
                 );
                 setListAdapter(adapter);
+
 
 /*                Toast.makeText(
                         this,
