@@ -319,7 +319,7 @@ public class ScheduleEditAct extends AppCompatActivity {
         }
 
         // TODO: disable test ID
-        mScheduleID = 1L;
+        //mScheduleID = 1L;
 
         // Log values
         if (mScheduleID != null) {

@@ -34,7 +34,8 @@
             android:label="@string/title_activity_schedule_edit"
             android:theme="@style/AppTheme" />
         <activity android:name=".CalendarActivity" />
-        <activity android:name=".ScheduleListAct"></activity>
+        <activity android:name=".ScheduleListAct" />
+        <activity android:name=".ScheduleListDayAct"></activity>
     </application>
 
 </manifest>

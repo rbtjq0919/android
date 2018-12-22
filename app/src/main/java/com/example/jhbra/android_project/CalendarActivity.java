@@ -19,6 +19,7 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
+import android.widget.Button;
 import android.widget.GridView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
@@ -76,7 +77,14 @@ public class CalendarActivity extends Activity {
         gridView.setAdapter(gridAdapter);
         gridView.setOnItemClickListener(mItemClickListener);
 
-
+        Button scheduleAllList = (Button) findViewById(R.id.list);
+        scheduleAllList.setOnClickListener(new Button.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(getApplicationContext(),ScheduleListAct.class);
+                startActivity(intent);
+            }
+        });
     }
 
 
@@ -90,12 +98,15 @@ public class CalendarActivity extends Activity {
     private AdapterView.OnItemClickListener mItemClickListener = new AdapterView.OnItemClickListener() {
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long l_position) {
-            //Intent intent = new Intent(getApplicationContext(),ScheduleEditAct.class);
-            Intent intent = new Intent(getApplicationContext(),ScheduleListAct.class);
-            int day = position - mCal.get(Calendar.DAY_OF_WEEK) - 5;
+            int magin = mCal.get(Calendar.DAY_OF_WEEK) + 5;
+            if(position > magin) {
+                Intent intent = new Intent(getApplicationContext(), ScheduleListDayAct.class);
 
-            intent.putExtra("TARGET_TIMESTAMP",day);
-            startActivity(intent);
+                int day = position - magin;
+
+                intent.putExtra("TARGET_TIMESTAMP", day);
+                startActivity(intent);
+            }
         }
     };
 
@@ -173,7 +184,7 @@ public class CalendarActivity extends Activity {
             }
             // DB 날짜
             if (position == getDB()) {
-                holder.tvItemGridView.setTextColor(getResources().getColor(R.color.colorpurple));
+                holder.tvItemGridView.setTextColor(getResources().getColor(R.color.colorGreen));
             }
 
             return convertView;

@@ -13,7 +13,7 @@
         android:background="@color/colorBlue"
         android:gravity="center"
         android:textColor="@color/colorWhite"
-        android:textSize="20sp" />
+        android:textSize="30dp" />
 
     <LinearLayout
         android:layout_marginTop="10dp"

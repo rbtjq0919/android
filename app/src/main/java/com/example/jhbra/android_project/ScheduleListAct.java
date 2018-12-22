@@ -9,11 +9,14 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.Toast;
+
+import java.util.Calendar;
 
 public class ScheduleListAct extends ListActivity {
 
@@ -21,6 +24,7 @@ public class ScheduleListAct extends ListActivity {
         public static final String SQL_WHERE_DEFAULT = "";
 
         String mArgWhere = SQL_WHERE_DEFAULT;
+        ListAdapter adapter;
 
         @Override
         protected void onCreate(Bundle savedInstanceState) {
@@ -38,7 +42,11 @@ public class ScheduleListAct extends ListActivity {
                     startActivity(intent);
                 }
             });
+
+
+
         }
+
 
         @Override
         public void onResume() {
@@ -61,7 +69,7 @@ public class ScheduleListAct extends ListActivity {
                 startManagingCursor(cur);
 
                 // Set ListAdapter
-                ListAdapter adapter = new SimpleCursorAdapter(
+                adapter = new SimpleCursorAdapter(
                         this,
                         R.layout.item_schedule_list,
                         cur,
@@ -82,10 +90,13 @@ public class ScheduleListAct extends ListActivity {
                 ).show();*/
 
             } catch (Exception e) {
-                Log.e("Prac08-2Acts", "SELECT failed", e);
+                Intent intent = new Intent(getApplicationContext(),ScheduleEditAct.class);
+                intent.putExtra("TARGET_TIMESTAMP",0);
+                startActivity(intent);
+
                 Toast.makeText(
                         this,
-                        "SELECT에 실패했습니다!",
+                        "일정 추가",
                         Toast.LENGTH_LONG
                 ).show();
                 finish();
