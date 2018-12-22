@@ -1,5 +1,6 @@
 package com.example.jhbra.android_project;
 
+import android.Manifest;
 import android.app.DatePickerDialog;
 import android.content.ContentResolver;
 import android.content.ContentUris;
@@ -7,14 +8,19 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.location.Address;
 import android.location.Geocoder;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
@@ -60,6 +66,8 @@ public class ScheduleEditAct extends AppCompatActivity {
     private Date mDepartureDate;
     @NonNull
     private Transportation mTransport = Transportation.CAR;
+    @Nullable
+    private Location mCurLocation;
 
     public ScheduleEditAct() {
         long millis = (System.currentTimeMillis() + 25 * 60 * 60 * 1000);
@@ -75,7 +83,8 @@ public class ScheduleEditAct extends AppCompatActivity {
         imm.hideSoftInputFromWindow(findViewById(R.id.editTextMemo).getWindowToken(), 0);
     }
 
-    private @Nullable ContentValues fetchScheduleByID() {
+    private @Nullable
+    ContentValues fetchScheduleByID() {
         Uri uri = ContentUris.withAppendedId(DBProvider.CONTENT_URI, mScheduleID);
         Log.d("ScheduleEditAct", "initViewsFromScheduleID: querying to "
                 + uri.toString());
@@ -123,6 +132,7 @@ public class ScheduleEditAct extends AppCompatActivity {
 
     /**
      * https://stackoverflow.com/a/38548560
+     *
      * @param latitude
      * @param longitude
      * @return string
@@ -143,13 +153,37 @@ public class ScheduleEditAct extends AppCompatActivity {
             String latDegree = latDegrees >= 0 ? "N" : "S";
             String lonDegrees = longDegrees >= 0 ? "E" : "W";
 
-            return  Math.abs(latDegrees) + "°" + latMinutes + "'" + latSeconds
-                    + "\"" + latDegree +" "+ Math.abs(longDegrees) + "°" + longMinutes
+            return Math.abs(latDegrees) + "°" + latMinutes + "'" + latSeconds
+                    + "\"" + latDegree + " " + Math.abs(longDegrees) + "°" + longMinutes
                     + "'" + longSeconds + "\"" + lonDegrees;
         } catch (Exception e) {
-            return ""+ String.format("%8.5f", latitude) + "  "
-                    + String.format("%8.5f", longitude) ;
+            return "" + String.format("%8.5f", latitude) + "  "
+                    + String.format("%8.5f", longitude);
         }
+    }
+
+    private String geocodeLocation(double latitude, double longitude) {
+        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+        String addressStr = null;
+        try {
+            List<Address> addressList
+                    = geocoder.getFromLocation(latitude, longitude, 1);
+            Address address = addressList.get(0);
+            StringBuilder sb = new StringBuilder();
+            sb.append(address.getCountryName());
+            sb.append(' ');
+            sb.append(address.getAdminArea());
+            sb.append(' ');
+            sb.append(address.getSubAdminArea());
+            sb.append(' ');
+            sb.append(address.getLocality());
+            addressStr = sb.toString();
+        } catch (IOException e) {
+            Log.e("ScheduleEditAct", "geocodeLocation: cannot convert longitude " +
+                    "and latitude to a geo-coded address!", e);
+            addressStr = getFormattedLocationInDegree(latitude, longitude);
+        }
+        return addressStr;
     }
 
     private boolean initValuesAndViews() {
@@ -252,27 +286,7 @@ public class ScheduleEditAct extends AppCompatActivity {
 
         // Set destination address view
         if (mLongitude != null && mLatitude != null) {
-            Geocoder geocoder = new Geocoder(this, Locale.getDefault());
-            String addressStr = null;
-            try {
-                List<Address> addressList
-                        = geocoder.getFromLocation(mLatitude, mLongitude, 1);
-                Address address = addressList.get(0);
-                StringBuilder sb = new StringBuilder();
-                sb.append(address.getCountryName());
-                sb.append(' ');
-                sb.append(address.getAdminArea());
-                sb.append(' ');
-                sb.append(address.getSubAdminArea());
-                sb.append(' ');
-                sb.append(address.getLocality());
-                addressStr = sb.toString();
-            } catch (IOException e) {
-                Log.e("ScheduleEditAct", "initValuesAndViews: cannot convert longitude " +
-                        "and latitude to a geo-coded address!", e);
-                addressStr = getFormattedLocationInDegree(mLatitude, mLongitude);
-            }
-            textViewDestinationAddress.setText(addressStr);
+            textViewDestinationAddress.setText(geocodeLocation(mLatitude, mLongitude));
         }
 
         // Set transportation view
@@ -362,6 +376,30 @@ public class ScheduleEditAct extends AppCompatActivity {
         textViewDepartureTime.setText(departureTimeStr);
     }
 
+    private void calculateAndUpdateDistance() {
+        if (mCurLocation == null || mLongitude == null || mLatitude == null) {
+            return;
+        }
+        Location destination = new Location("destination");
+        destination.setLongitude(mLongitude);
+        destination.setLatitude(mLatitude);
+        float distance = destination.distanceTo(mCurLocation);
+        int moveDuration = (int) Math.ceil(distance / (mTransport.getVelocity() * 1000.0 / 60.0));
+        if (moveDuration < 3) {
+            moveDuration = 3;
+        }
+        Log.i("ScheduleEditAct", String.format("calculateAndUpdateDistance: distance = %.2f m, "
+                + "velocity = %.2f km/h, moveDuration = %d min", distance, mTransport.getVelocity(),
+                moveDuration));
+        EditText editTextMoveDuration
+                = (EditText) findViewById(R.id.editTextMoveDuration);
+        String moveDurationStr = String.valueOf(moveDuration);
+        editTextMoveDuration.setText(moveDurationStr);
+        updateDepartureTimeAndView();
+        Toast.makeText(this, "예상 소요 시간이 자동으로 갱신되었습니다.",
+                Toast.LENGTH_LONG).show();
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -371,16 +409,26 @@ public class ScheduleEditAct extends AppCompatActivity {
         if (args != null) {
             Log.i("ScheduleEditAct", "Intent bundle is given");
             // mScheduleID
-            long scheduleID = args.getLong(ARG_SCHEDULE_ID, -1);
-            if (scheduleID != -1) {
-                mScheduleID = Long.valueOf(scheduleID);
+            try {
+                long scheduleID = args.getLong(ARG_SCHEDULE_ID, -1);
+                if (scheduleID != -1) {
+                    mScheduleID = Long.valueOf(scheduleID);
+                }
+            } catch (Exception e) {
+                Log.e("ScheduleEditAct", "onCreate: wrong bundle! invalid "
+                        + ARG_SCHEDULE_ID, e);
             }
             // mTargetDate
-            long millis = args.getLong(ARG_TARGET_TIMESTAMP);
-            if (millis != 0) {
-                // Discard time under hour
-                millis -= millis % (60 * 60 * 1000);
-                mTargetDate = new Date(millis);
+            try {
+                long millis = args.getLong(ARG_TARGET_TIMESTAMP);
+                if (millis != 0) {
+                    // Discard time under hour
+                    millis -= millis % (60 * 60 * 1000);
+                    mTargetDate = new Date(millis);
+                }
+            } catch (Exception e) {
+                Log.e("ScheduleEditAct", "onCreate: wrong bundle! invalid "
+                        + ARG_TARGET_TIMESTAMP, e);
             }
         } else {
             Log.i("ScheduleEditAct", "No intent bundle!");
@@ -490,6 +538,54 @@ public class ScheduleEditAct extends AppCompatActivity {
             }
         };
         editTextMoveDuration.addTextChangedListener(moveDurationTextWatcher);
+
+        // Get current location
+        LocationManager locationManager
+                = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        LocationListener locationListener = new LocationListener() {
+            @Override
+            public void onLocationChanged(Location location) {
+                Log.d("ScheduleEditAct", "onLocationChanged: got the location => "
+                        + "longitude = " + location.getLongitude() + ", latitude = "
+                        + location.getLatitude());
+                mCurLocation = location;
+                // Update view
+                TextView textViewCurLocation
+                        = (TextView) findViewById(R.id.textViewCurrentLocation);
+                textViewCurLocation.setText(
+                        geocodeLocation(location.getLatitude(), location.getLongitude()));
+            }
+
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+            }
+
+            @Override
+            public void onProviderEnabled(String provider) {
+            }
+
+            @Override
+            public void onProviderDisabled(String provider) {
+            }
+        };
+
+        if (ActivityCompat.checkSelfPermission(
+                this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(
+                this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED)
+            return;
+
+        if (locationManager.getAllProviders().contains(LocationManager.NETWORK_PROVIDER)) {
+            locationManager.requestLocationUpdates(
+                    LocationManager.NETWORK_PROVIDER, 0, 0, locationListener);
+        }
+
+        if (locationManager.getAllProviders().contains(LocationManager.GPS_PROVIDER)) {
+            locationManager.requestLocationUpdates(
+                    LocationManager.GPS_PROVIDER, 0, 0, locationListener);
+        }
     }
 
     @Override
@@ -517,13 +613,15 @@ public class ScheduleEditAct extends AppCompatActivity {
                         "longitude = " + mLongitude + ", latitude = " + mLatitude);
                 Toast.makeText(this, "장소를 선택했습니다.",
                         Toast.LENGTH_SHORT).show();
+                // Update move duration
+                calculateAndUpdateDistance();
             } else if (resultCode == RESULT_CANCELED) {
                 Toast.makeText(this, "장소 선택을 취소했습니다.",
                         Toast.LENGTH_SHORT).show();
             }
         } else {
             Log.d("ScheduleEditAct", "onActivityResult: requestCode = " +
-                    "unknown (" + requestCode +  "), resultCode = " + resultCode);
+                    "unknown (" + requestCode + "), resultCode = " + resultCode);
         }
     }
 
@@ -600,6 +698,7 @@ public class ScheduleEditAct extends AppCompatActivity {
                                             + "Cannot comprehend selection " + which
                                             + " (" + transports[which] + ")");
                                 }
+                                calculateAndUpdateDistance();
                             }
                         }
                 )
