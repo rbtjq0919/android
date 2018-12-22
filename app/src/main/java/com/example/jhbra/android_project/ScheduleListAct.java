@@ -2,6 +2,7 @@ package com.example.jhbra.android_project;
 
 import android.app.ListActivity;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -9,8 +10,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
@@ -44,14 +47,6 @@ public class ScheduleListAct extends ListActivity {
 
 
         }
-    @Override
-    protected void onListItemClick(ListView l, View v, int position, long id) {
-        super.onListItemClick(l, v, position, id);
-        System.out.println("----------------"+position);
-
-    }
-
-
 
         @Override
         public void onResume() {
@@ -109,4 +104,39 @@ public class ScheduleListAct extends ListActivity {
                 finish();
             }
         }
+    private void hideSoftKeyboard() {
+        InputMethodManager imm
+                = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(findViewById(R.id.editText).getWindowToken(),
+                0);
+    }
+
+    public void onClickRemoveButton(View v) {
+        hideSoftKeyboard();
+
+        EditText editTextId = (EditText) findViewById(R.id.editText);
+
+        String idStr = editTextId.getText().toString().trim();
+
+        ContentResolver cr = getContentResolver();
+
+        try {
+            int cnt = cr.delete(Uri.parse("content://moapp1.gps.calendar/schedule/" + idStr), null, null);
+        } catch (Exception e) {
+            Toast.makeText(
+                    this,
+                    "레코드 삭제에 실패했습니다!",
+                    Toast.LENGTH_LONG
+            ).show();
+            return;
+        }
+
+        loadDB();
+
+        Toast.makeText(
+                this,
+                "해당 레코드를 지웠습니다.",
+                Toast.LENGTH_LONG
+        ).show();
+    }
 }

@@ -142,10 +142,6 @@ public class CalendarActivity extends Activity {
         }
 
         public int getDB(){
-
-
-
-
             long toDay = System.currentTimeMillis();
 
             Calendar mCalendar = Calendar. getInstance();
@@ -188,10 +184,6 @@ public class CalendarActivity extends Activity {
             if (sToday.equals(getItem(position))) {
                 holder.tvItemGridView.setTextColor(getResources().getColor(R.color.colorBlack));
                 holder.tvItemGridView.setTextSize(17);
-            }
-            // DB 날짜
-            if (position == getDB()) {
-                holder.tvItemGridView.setTextColor(getResources().getColor(R.color.colorGreen));
             }
 
             return convertView;

@@ -15,16 +15,42 @@
         android:textColor="@color/colorWhite"
         android:background="@color/colorBlue"
         />
-
     <Button
         android:id="@+id/scheduleaddbutton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@color/colorGray"
         android:text="일정 추가"
+        android:textColor="@color/colorWhite"
+        android:textSize="30dp" />
+
+    <EditText
+        android:id="@+id/editText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="textPersonName"
+        android:text="" />
+
+    <Button
+        android:id="@+id/schedulremovebutton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="일정 삭제"
         android:textSize="30dp"
         android:textColor="@color/colorWhite"
         android:background="@color/colorGray"
-        />
+        android:onClick="onClickRemoveButton"/>
+
+    <Button
+        android:id="@+id/scheduleUpdatebutton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/colorGray"
+        android:text="일정 수정"
+        android:textColor="@color/colorWhite"
+        android:textSize="30dp" />
+
 
     <ListView
         android:id="@android:id/list"
