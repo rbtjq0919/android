@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ListAdapter;
@@ -31,8 +32,9 @@ public class ScheduleListDayAct extends ListActivity {
         setContentView(R.layout.activity_schedule_list_day);
 
         Intent intent = getIntent();
-        toDay = intent.getExtras().getInt("TARGET_TIMESTAMP");
-
+        toDay = intent.getExtras().getInt("TARGET_TIMESTAMP_DAY");
+        toMonth = intent.getExtras().getInt("TARGET_TIMESTAMP_MONTH");
+        toYear = intent.getExtras().getInt("TARGET_TIMESTAMP_YEAR");
 
         Button scheduleAdd = (Button) findViewById(R.id.scheduleaddbutton);
         scheduleAdd.setOnClickListener(new Button.OnClickListener() {
@@ -40,10 +42,6 @@ public class ScheduleListDayAct extends ListActivity {
             public void onClick(View view) {
 
                 Intent intent = new Intent(getApplicationContext(),ScheduleEditAct.class);
-                intent.putExtra("TARGET_TIMESTAMP_DAY",toDay);
-                intent.putExtra("TARGET_TIMESTAMP_MONTH",toMonth);
-                intent.putExtra("TARGET_TIMESTAMP_YEAR",toYear);
-
                 startActivity(intent);
             }
         });
@@ -65,23 +63,23 @@ public class ScheduleListDayAct extends ListActivity {
 
     protected void loadDB() {
         ContentResolver cr = getContentResolver();
-
         String selection = "";
+
         if (toYear != 0 && toMonth != 0 && toDay != 0) {
-            long timestamp = new GregorianCalendar(toYear, toMonth, toDay, 0, 0)
+            long timestamp = new GregorianCalendar(toYear, toMonth-1, toDay, 0, 0)
                     .getTime().getTime();
-            selection = "millis >= " + timestamp + " and millis < " + (timestamp + 86400);
+            selection = "millis >= " + String.valueOf(timestamp)
+                    + " and millis < "
+                    + String.valueOf(timestamp + 86400000L);
+            System.out.println(selection);
+
         }
 
         try {
-            // SELECT
-            Cursor cur = cr.query(Uri.parse("content://moapp1.gps.calendar/schedule"),
+                // SELECT
+                Cursor cur = cr.query(Uri.parse("content://moapp1.gps.calendar/schedule"),
                     null, selection, null, null);
             startManagingCursor(cur);
-
-            int a = cur.getInt(3);
-
-            System.out.println(a);
 
             // Set ListAdapter
             adapter = new SimpleCursorAdapter(
@@ -106,7 +104,6 @@ public class ScheduleListDayAct extends ListActivity {
 
         } catch (Exception e) {
             Intent intent = new Intent(getApplicationContext(),ScheduleEditAct.class);
-            intent.putExtra("TARGET_TIMESTAMP",0);
             startActivity(intent);
 
             Toast.makeText(
