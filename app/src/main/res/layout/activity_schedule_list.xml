@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ScheduleListAct"
+    android:orientation="vertical">
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="모든 알람 목록"
+        android:textSize="25dp"
+        android:textColor="@color/colorWhite"
+        android:background="@color/colorBlue"
+        />
+
+    <Button
+        android:id="@+id/scheduleaddbutton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="일정 추가"
+        android:textSize="30dp"
+        android:textColor="@color/colorWhite"
+        android:background="@color/colorGreen"
+        />
+
+    <ListView
+        android:id="@android:id/list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+    >
+    </ListView>
+
+    <TextView
+        android:id="@android:id/empty"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:text="nodata"
+        android:textSize="20dp" />
+
+</LinearLayout>
