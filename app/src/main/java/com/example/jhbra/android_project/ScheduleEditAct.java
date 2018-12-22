@@ -222,8 +222,11 @@ public class ScheduleEditAct extends AppCompatActivity {
         long millis = mTargetDate.getTime();
         cv.put("millis", millis);
 
-        // TEST TODO test data
-        cv.put("departure", millis - 10);
+        if (mDepartureDate != null) {
+            cv.put("departure", mDepartureDate.getTime());
+        } else {
+            cv.putNull("departure");
+        }
 
         if (mLongitude != null && mLatitude != null) {
             cv.put("longitude", mLongitude);
