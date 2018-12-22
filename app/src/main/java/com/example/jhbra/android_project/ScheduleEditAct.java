@@ -376,6 +376,30 @@ public class ScheduleEditAct extends AppCompatActivity {
         textViewDepartureTime.setText(departureTimeStr);
     }
 
+    private void calculateAndUpdateDistance() {
+        if (mCurLocation == null || mLongitude == null || mLatitude == null) {
+            return;
+        }
+        Location destination = new Location("destination");
+        destination.setLongitude(mLongitude);
+        destination.setLatitude(mLatitude);
+        float distance = destination.distanceTo(mCurLocation);
+        int moveDuration = (int) Math.ceil(distance / (mTransport.getVelocity() * 1000.0 / 60.0));
+        if (moveDuration < 3) {
+            moveDuration = 3;
+        }
+        Log.i("ScheduleEditAct", String.format("calculateAndUpdateDistance: distance = %.2f m, "
+                + "velocity = %.2f km/h, moveDuration = %d min", distance, mTransport.getVelocity(),
+                moveDuration));
+        EditText editTextMoveDuration
+                = (EditText) findViewById(R.id.editTextMoveDuration);
+        String moveDurationStr = String.valueOf(moveDuration);
+        editTextMoveDuration.setText(moveDurationStr);
+        updateDepartureTimeAndView();
+        Toast.makeText(this, "예상 소요 시간이 자동으로 갱신되었습니다.",
+                Toast.LENGTH_LONG).show();
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -589,6 +613,8 @@ public class ScheduleEditAct extends AppCompatActivity {
                         "longitude = " + mLongitude + ", latitude = " + mLatitude);
                 Toast.makeText(this, "장소를 선택했습니다.",
                         Toast.LENGTH_SHORT).show();
+                // Update move duration
+                calculateAndUpdateDistance();
             } else if (resultCode == RESULT_CANCELED) {
                 Toast.makeText(this, "장소 선택을 취소했습니다.",
                         Toast.LENGTH_SHORT).show();
@@ -672,6 +698,7 @@ public class ScheduleEditAct extends AppCompatActivity {
                                             + "Cannot comprehend selection " + which
                                             + " (" + transports[which] + ")");
                                 }
+                                calculateAndUpdateDistance();
                             }
                         }
                 )
